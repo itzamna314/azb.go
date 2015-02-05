@@ -1,0 +1,8 @@
+# Goop-managed workspace
+.vendor/
+
+# Output from `make archive`
+.artifacts/
+
+# Output from `make build`
+bin/
