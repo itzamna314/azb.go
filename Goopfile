@@ -1,2 +1,3 @@
 github.com/MSOpenTech/azure-sdk-for-go #0fbd37144de3adc2aef74db867c0e15e41c7f74a
 github.com/Sirupsen/logrus #89efc1fea9b8b47f6f6ce72279a7ed9496b4cdb3
+github.com/docopt/docopt-go #0.6.1

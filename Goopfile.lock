@@ -1,4 +1,5 @@
 github.com/MSOpenTech/azure-sdk-for-go #0fbd37144de3adc2aef74db867c0e15e41c7f74a
 github.com/Sirupsen/logrus #89efc1fea9b8b47f6f6ce72279a7ed9496b4cdb3
+github.com/docopt/docopt-go #0.6.1
 github.com/getsentry/raven-go #3fd636ed242c26c0f55bc9ee1fe47e1d6d2d77f7
 github.com/tobi/airbrake-go #5b5e269e1bc398d43f67e43dafff3414a59cd5a2
