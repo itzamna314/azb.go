@@ -59,3 +59,16 @@ $ make test
 ```
 
 **Note:** There is pretty much no chance that `go get` will work on this repo, and that's _just fine_ with me.
+
+## Packaging
+
+`azb` is a tool that doesn't need (or want) to be installed into the Go bin path.  Instead, we wrap it up into a tarball.
+
+```Bash
+$ make archive
+$ ls tmp/
+```
+
+## Cross-compilation
+
+It should be possible to cross-compile `azb` using a tool like `goxc`, but I haven't tested it on Windows, so there might be some folder path issues (of the / vs \ variety).
