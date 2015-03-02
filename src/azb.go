@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	ErrUnrecognizedCommand = errors.New("unrecognized command")
-	ErrContainerNotFound   = errors.New("container not found")
+	ErrUnrecognizedCommand     = errors.New("unrecognized command")
+	ErrContainerNotFound       = errors.New("container not found")
+	ErrContainerOrBlobNotFound = errors.New("container or blob not found")
 )
 
 type SimpleCommand struct {
@@ -18,6 +19,7 @@ type SimpleCommand struct {
 	Command     string
 	Source      *BlobSpec
 	Destination *BlobSpec
+	LocalPath   string
 	OutputMode  string
 }
 
@@ -25,6 +27,8 @@ func (cmd *SimpleCommand) Dispatch() error {
 	switch cmd.Command {
 	case "ls":
 		return cmd.ls()
+	case "pull":
+		return cmd.pull()
 	default:
 		return ErrUnrecognizedCommand
 	}
@@ -40,6 +44,14 @@ func (cmd *SimpleCommand) ls() error {
 	} else {
 		return cmd.listContainers()
 	}
+}
+
+func (cmd *SimpleCommand) pull() error {
+	if cmd.Source == nil || cmd.LocalPath == "" {
+		return ErrUnrecognizedCommand
+	}
+
+	return cmd.pullBlob()
 }
 
 func (cmd *SimpleCommand) getStorageService() (*storageservice.StorageService, error) {

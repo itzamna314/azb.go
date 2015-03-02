@@ -52,12 +52,7 @@ func parseOpt() (err error) {
 			OutputMode: mode,
 		}
 
-		s, ok := res["<blobspec>"].(string)
-		if !ok {
-			s = ""
-		}
-
-		src, err := azb.ParseBlobSpec(s)
+		src, err := blobSpec(res, "<blobspec>", false)
 		if err != nil {
 			return err
 		}
@@ -66,7 +61,36 @@ func parseOpt() (err error) {
 
 		err = cmd.Dispatch()
 		if err == azb.ErrContainerNotFound {
-			fmt.Println("azb-ls: No such container")
+			fmt.Println("azb ls: No such container")
+			os.Exit(1)
+		} else if err != nil {
+			panic(err)
+		}
+	}
+
+	if res["pull"].(bool) {
+		cmd := &azb.SimpleCommand{
+			Config:     conf,
+			Command:    "pull",
+			OutputMode: mode,
+		}
+
+		src, err := blobSpec(res, "<blobpath>", true)
+		if err != nil {
+			return err
+		}
+
+		cmd.Source = src
+
+		if dst, ok := res["<dst>"].(string); ok {
+			cmd.LocalPath = dst
+		} else {
+			cmd.LocalPath = fmt.Sprintf("%s/%s", src.Container, src.Path)
+		}
+
+		err = cmd.Dispatch()
+		if err == azb.ErrContainerOrBlobNotFound {
+			fmt.Println("azb pull: No such container or blob")
 			os.Exit(1)
 		} else if err != nil {
 			panic(err)
@@ -82,7 +106,7 @@ func cmdAzb(argv []string) (map[string]interface{}, error) {
 Usage:
   azb [ -F configFile ] [ -e environment ] [ --json ] ls [ <blobspec> ] 
   azb [ -F configFile ] [ -e environment ] [ --json ] pull <blobpath> [ <dst> ]
-  azb [ -F configFile ] [ -e environment ] [ --json ] push <blobpath> [ <src> ]
+  azb [ -F configFile ] [ -e environment ] [ --json ] push [ -R ] <blobpath> [ <src> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] rm <blobpath>
   azb [ -F configFile ] [ -e environment ] [ --json ] cp <srcblobpath> <dstblobpath>
   azb [ -F configFile ] [ -e environment ] [ --json ] mv <srcblobpath> <dstblobpath>
@@ -119,4 +143,21 @@ See 'git help <command>' for more information on a specific command.
 	//fmt.Printf("dict= %v\n", dict)
 
 	return dict, err
+}
+
+func blobSpec(res map[string]interface{}, key string, pathPresent bool) (*azb.BlobSpec, error) {
+	s, ok := res[key].(string)
+	if !ok {
+		s = ""
+	}
+
+	src, err := azb.ParseBlobSpec(s)
+	if err != nil {
+		return nil, err
+	} else if pathPresent && !src.PathPresent {
+		fmt.Println("azb: operation requires a fully-qualified path (e.g. foo/bar.txt)")
+		os.Exit(1)
+	}
+
+	return src, nil
 }
