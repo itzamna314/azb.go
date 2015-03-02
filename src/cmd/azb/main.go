@@ -63,11 +63,42 @@ func parseOpt() (err error) {
 		if err == azb.ErrContainerNotFound {
 			fmt.Println("azb ls: No such container")
 			os.Exit(1)
+		} else if err == azb.ErrUnrecognizedCommand {
+			fmt.Println("azb ls: unexpected arguments")
+			os.Exit(1)
 		} else if err != nil {
 			panic(err)
 		}
 	}
 
+	// detect tree
+	if res["tree"].(bool) {
+		cmd := &azb.SimpleCommand{
+			Config:     conf,
+			Command:    "tree",
+			OutputMode: mode,
+		}
+
+		src, err := blobSpec(res, "<container>", false)
+		if err != nil {
+			return err
+		}
+
+		cmd.Source = src
+
+		err = cmd.Dispatch()
+		if err == azb.ErrContainerNotFound {
+			fmt.Println("azb tree: No such container")
+			os.Exit(1)
+		} else if err == azb.ErrUnrecognizedCommand {
+			fmt.Println("azb tree: unexpected arguments")
+			os.Exit(1)
+		} else if err != nil {
+			panic(err)
+		}
+	}
+
+	// detect pull
 	if res["pull"].(bool) {
 		cmd := &azb.SimpleCommand{
 			Config:     conf,
@@ -105,6 +136,7 @@ func cmdAzb(argv []string) (map[string]interface{}, error) {
 
 Usage:
   azb [ -F configFile ] [ -e environment ] [ --json ] ls [ <blobspec> ] 
+  azb [ -F configFile ] [ -e environment ] [ --json ] tree <container>
   azb [ -F configFile ] [ -e environment ] [ --json ] pull <blobpath> [ <dst> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] push [ -R ] <blobpath> [ <src> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] rm <blobpath>

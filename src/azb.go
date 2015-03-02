@@ -27,6 +27,8 @@ func (cmd *SimpleCommand) Dispatch() error {
 	switch cmd.Command {
 	case "ls":
 		return cmd.ls()
+	case "tree":
+		return cmd.tree()
 	case "pull":
 		return cmd.pull()
 	default:
@@ -44,6 +46,18 @@ func (cmd *SimpleCommand) ls() error {
 	} else {
 		return cmd.listContainers()
 	}
+}
+
+func (cmd *SimpleCommand) tree() error {
+	if cmd.Source == nil || cmd.Destination != nil {
+		return ErrUnrecognizedCommand
+	}
+
+	if cmd.Source.PathPresent {
+		return ErrUnrecognizedCommand
+	}
+
+	return cmd.treeBlobs()
 }
 
 func (cmd *SimpleCommand) pull() error {

@@ -8,6 +8,7 @@ A self-contained command-line tool that provides access to Azure Blob storage
 ```
 Usage:
   azb [ -F configFile ] [ -e environment ] [ --json ] ls [ <blobspec> ] 
+  azb [ -F configFile ] [ -e environment ] [ --json ] tree <container> 
   azb [ -F configFile ] [ -e environment ] [ --json ] pull <blobpath> [ <dst> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] push [ -R ] <blobpath> [ <src> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] rm <blobpath>
