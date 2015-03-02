@@ -22,12 +22,9 @@ Arguments:
   blobpath			The path of a blob (e.g. "mycontainer/foo.txt")
 
 Options:
-  --add=NAME    	Creates a container
   -e environment    Specifies the Azure Storage Services account to use [default: default]
   -F configFile  	Specifies an alternative per-user configuration file [default: /etc/azb/config]
   -h, --help     	Show this screen.
-  --list        	List all of the containers in the environment
-  --rm=NAME     	Destroys a container
   --version     	Show version.
 
 The most commonly used azb commands are:
