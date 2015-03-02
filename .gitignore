@@ -2,7 +2,7 @@
 .vendor/
 
 # Output from `make archive`
-.artifacts/
+.build/
 
 # Output from `make build`
-bin/
+tmp/
