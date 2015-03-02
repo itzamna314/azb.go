@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/MSOpenTech/azure-sdk-for-go/storage"
+	"os"
 	"sort"
 	"strings"
 )
@@ -119,35 +120,111 @@ func buildTree(arr blobs) (root *node) {
 // └── tmp
 //     └── azb
 
-func printTree(node *node, indent int) (nd, nf int) {
+// .
+// B Goopfile
+// B Goopfile.lock
+// B Makefile
+// B README.md
+// B TODO
+// B VERSION
+// B src
+// T B azb.go
+// T B blobspec.go
+// T B blobspec_test.go
+// T B cmd
+// T T L azb
+// T T A L main.go
+// T B config.go
+// T B ls_blob.go
+// T B ls_container.go
+// T L pull.go
+// L tmp
+// A L azb
+
+const (
+	TRUNK  string = "│  "
+	BRANCH string = "├──"
+	LEAF   string = "└──"
+	AIR    string = "   "
+	STAR   string = "─x─"
+)
+
+func printRoot(node *node) (nd, nf int) {
+	return printTree(node, []string{})
+}
+
+func pop(arr []string) (head []string, s string) {
+	if len(arr) == 0 {
+		return []string{}, ""
+	} else if len(arr) == 1 {
+		return []string{}, arr[0]
+	} else {
+		return arr[:len(arr)-2], arr[len(arr)-1]
+	}
+}
+
+func push(arr []string, s ...string) []string {
+	for _, u := range s {
+		arr = append(arr, u)
+	}
+	return arr
+}
+
+func printTree(node *node, stack []string) (nd, nf int) {
+	if len(stack) > 0 {
+		fmt.Printf("%s ", strings.Join(stack, " "))
+	}
+
 	fmt.Println(node.Name)
 
 	if node.Nodes == nil {
 		return 0, 1
 	}
 
-	i := 1
+	base, top := pop(stack)
+
 	nd = 0
 	nf = 0
+	zz := node.Len() - 1
+	z0 := 0
 
 	for _, v := range node.Nodes {
 
-		for j := 0; j < indent; j++ {
-			fmt.Printf("│   ")
+		switch top {
+		case "":
+			if z0 < zz {
+				stack = push(base, BRANCH)
+			} else {
+				stack = push(base, LEAF)
+			}
+			break
+		case BRANCH:
+			if z0 < zz {
+				stack = push(base, AIR, TRUNK, BRANCH)
+			} else {
+				stack = push(base, AIR, TRUNK, LEAF)
+			}
+			break
+		case LEAF:
+			if z0 < zz {
+				stack = push(base, AIR, AIR, BRANCH)
+			} else {
+				stack = push(base, AIR, AIR, LEAF)
+			}
+			break
+		default:
+			fmt.Println("\n---")
+			fmt.Println("invalid stack: ")
+			fmt.Printf("stack=%v, top=%s\n", base, top)
+			os.Exit(9)
 		}
 
-		if i < node.Len() {
-			fmt.Printf("├── ")
-		} else {
-			fmt.Printf("└── ")
-		}
-
-		xd, xf := printTree(v, indent+1)
+		xd, xf := printTree(v, stack)
 
 		nd = nd + xd
 		nf = nf + xf
 
-		i++
+		z0++
 	}
 
 	return nd + 1, nf
@@ -168,7 +245,7 @@ func (cmd *SimpleCommand) treeBlobsReport(root *node) {
 		s, _ := json.Marshal(tmp)
 		fmt.Printf("%s\n", s)
 	} else {
-		nd, nf := printTree(root, 0)
+		nd, nf := printRoot(root)
 
 		fmt.Printf("\n%d directories, %d files\n", nd, nf)
 	}
