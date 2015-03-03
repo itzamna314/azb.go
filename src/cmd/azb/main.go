@@ -153,8 +153,32 @@ func doit() (err error) {
 	}
 
 	if res["put"].(bool) {
-		fmt.Println("azb put: not implemented")
-		os.Exit(2)
+		cmd := &azb.SimpleCommand{
+			Config:     conf,
+			Command:    "put",
+			OutputMode: mode,
+		}
+
+		dst, err := blobSpec(res, "<blobpath>", false)
+		if err != nil {
+			return err
+		}
+
+		cmd.Destination = dst
+
+		if path, ok := res["<src>"].(string); ok {
+			cmd.LocalPath = path
+		} else {
+			cmd.LocalPath = fmt.Sprintf("%s/%s", dst.Container, dst.Path)
+		}
+
+		err = cmd.Dispatch()
+		if err == azb.ErrContainerOrBlobNotFound {
+			fmt.Println("azb put: No such container or blob")
+			os.Exit(1)
+		} else if err != nil {
+			return err
+		}
 	}
 
 	return nil

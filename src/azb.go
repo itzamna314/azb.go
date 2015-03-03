@@ -34,6 +34,8 @@ func (cmd *SimpleCommand) Dispatch() error {
 		return cmd.pull()
 	case "rm":
 		return cmd.rm()
+	case "put":
+		return cmd.put()
 	default:
 		return ErrUnrecognizedCommand
 	}
@@ -77,6 +79,14 @@ func (cmd *SimpleCommand) pull() error {
 	}
 
 	return cmd.pullBlob()
+}
+
+func (cmd *SimpleCommand) put() error {
+	if cmd.Destination == nil || cmd.LocalPath == "" {
+		return ErrUnrecognizedCommand
+	}
+
+	return cmd.putBlob()
 }
 
 func (cmd *SimpleCommand) getStorageService() (*storageservice.StorageService, error) {
