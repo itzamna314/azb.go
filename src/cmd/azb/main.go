@@ -156,6 +156,21 @@ func parseOpt() (err error) {
 		}
 	}
 
+	if res["put"].(bool) {
+		fmt.Println("azb put: not implemented")
+		os.Exit(2)
+	}
+
+	if res["cp"].(bool) {
+		fmt.Println("azb cp: not implemented")
+		os.Exit(2)
+	}
+
+	if res["mv"].(bool) {
+		fmt.Println("azb mv: not implemented")
+		os.Exit(2)
+	}
+
 	return nil
 }
 
