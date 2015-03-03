@@ -21,6 +21,7 @@ type SimpleCommand struct {
 	Destination *BlobSpec
 	LocalPath   string
 	OutputMode  string
+	Destructive bool
 }
 
 func (cmd *SimpleCommand) Dispatch() error {
@@ -31,6 +32,8 @@ func (cmd *SimpleCommand) Dispatch() error {
 		return cmd.tree()
 	case "pull":
 		return cmd.pull()
+	case "rm":
+		return cmd.rm()
 	default:
 		return ErrUnrecognizedCommand
 	}
@@ -46,6 +49,14 @@ func (cmd *SimpleCommand) ls() error {
 	} else {
 		return cmd.listContainers()
 	}
+}
+
+func (cmd *SimpleCommand) rm() error {
+	if cmd.Source == nil || cmd.Destination != nil {
+		return ErrUnrecognizedCommand
+	}
+
+	return cmd.rmBlob()
 }
 
 func (cmd *SimpleCommand) tree() error {

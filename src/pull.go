@@ -75,7 +75,5 @@ func (cmd *SimpleCommand) pullBlobReport(written int64) {
 
 		s, _ := json.Marshal(tmp)
 		fmt.Printf("%s\n", s)
-	} else {
-		fmt.Printf("download complete (%d bytes)\n", written)
 	}
 }

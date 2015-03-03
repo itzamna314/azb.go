@@ -28,32 +28,10 @@ func newBlob(c storage.Blob) *blob {
 }
 
 func (cmd *SimpleCommand) listBlobs() error {
-	// get the client
-	client, err := cmd.getBlobStorageClient()
+
+	arr, err := cmd.listBlobsInternal()
 	if err != nil {
 		return err
-	}
-
-	// query the endpoint
-	res, err := client.ListBlobs(cmd.Source.Container, storage.ListBlobsParameters{Prefix: cmd.Source.Path})
-	if err != nil {
-		if sse, ok := err.(storage.StorageServiceError); ok {
-			switch sse.Code {
-			case "ContainerNotFound":
-				return ErrContainerNotFound
-			}
-		}
-		return err
-	}
-
-	if res.Marker != "" || res.NextMarker != "" {
-		fmt.Printf("\n---\nmarker: %s\nnext marker: %s\n---\n\n", res.Marker, res.NextMarker)
-	}
-
-	// flatten results
-	arr := []*blob{}
-	for _, u := range res.Blobs {
-		arr = append(arr, newBlob(u))
 	}
 
 	cmd.listBlobsReport(arr)
@@ -81,4 +59,36 @@ func (cmd *SimpleCommand) listBlobsReport(arr []*blob) {
 			fmt.Printf("%s\n", u.Name)
 		}
 	}
+}
+
+func (cmd *SimpleCommand) listBlobsInternal() ([]*blob, error) {
+	// get the client
+	client, err := cmd.getBlobStorageClient()
+	if err != nil {
+		return nil, err
+	}
+
+	// query the endpoint
+	res, err := client.ListBlobs(cmd.Source.Container, storage.ListBlobsParameters{Prefix: cmd.Source.Path})
+	if err != nil {
+		if sse, ok := err.(storage.StorageServiceError); ok {
+			switch sse.Code {
+			case "ContainerNotFound":
+				return nil, ErrContainerNotFound
+			}
+		}
+		return nil, err
+	}
+
+	if res.Marker != "" || res.NextMarker != "" {
+		fmt.Printf("\n---\nmarker: %s\nnext marker: %s\n---\n\n", res.Marker, res.NextMarker)
+	}
+
+	// flatten results
+	arr := []*blob{}
+	for _, u := range res.Blobs {
+		arr = append(arr, newBlob(u))
+	}
+
+	return arr, nil
 }

@@ -27,3 +27,11 @@ func ParseBlobSpec(s string) (*BlobSpec, error) {
 
 	return &BlobSpec{s, "", false}, nil
 }
+
+func (x *BlobSpec) String() string {
+	str := x.Container
+	if x.PathPresent {
+		str = str + "/" + x.Path
+	}
+	return str
+}

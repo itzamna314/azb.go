@@ -98,8 +98,8 @@ func parseOpt() (err error) {
 		}
 	}
 
-	// detect pull
-	if res["pull"].(bool) {
+	// detect get
+	if res["get"].(bool) {
 		cmd := &azb.SimpleCommand{
 			Config:     conf,
 			Command:    "pull",
@@ -128,6 +128,34 @@ func parseOpt() (err error) {
 		}
 	}
 
+	// detect rm
+	if res["rm"].(bool) {
+		cmd := &azb.SimpleCommand{
+			Config:     conf,
+			Command:    "rm",
+			OutputMode: mode,
+		}
+
+		if res["-f"].(bool) {
+			cmd.Destructive = true
+		}
+
+		src, err := blobSpec(res, "<blobpath>", true)
+		if err != nil {
+			return err
+		}
+
+		cmd.Source = src
+
+		err = cmd.Dispatch()
+		if err == azb.ErrContainerOrBlobNotFound {
+			fmt.Println("azb pull: No such container or blob")
+			os.Exit(1)
+		} else if err != nil {
+			panic(err)
+		}
+	}
+
 	return nil
 }
 
@@ -137,9 +165,9 @@ func cmdAzb(argv []string) (map[string]interface{}, error) {
 Usage:
   azb [ -F configFile ] [ -e environment ] [ --json ] ls [ <blobspec> ] 
   azb [ -F configFile ] [ -e environment ] [ --json ] tree <container>
-  azb [ -F configFile ] [ -e environment ] [ --json ] pull <blobpath> [ <dst> ]
-  azb [ -F configFile ] [ -e environment ] [ --json ] push [ -R ] <blobpath> [ <src> ]
-  azb [ -F configFile ] [ -e environment ] [ --json ] rm <blobpath>
+  azb [ -F configFile ] [ -e environment ] [ --json ] get <blobpath> [ <dst> ]
+  azb [ -F configFile ] [ -e environment ] [ --json ] put <blobpath> [ <src> ]
+  azb [ -F configFile ] [ -e environment ] [ --json ] rm [ -f ] <blobpath>
   azb [ -F configFile ] [ -e environment ] [ --json ] cp <srcblobpath> <dstblobpath>
   azb [ -F configFile ] [ -e environment ] [ --json ] mv <srcblobpath> <dstblobpath>
   azb -h | --help
@@ -147,16 +175,14 @@ Usage:
 
 Arguments:
   container     	The name of the container to query
-  blobspec      	A reference to one or more blobs (e.g. "mycontainer/foo*", "mycontainer/")
+  blobspec      	A reference to one or more blobs (e.g. "mycontainer/foo", "mycontainer/")
   blobpath			The path of a blob (e.g. "mycontainer/foo.txt")
 
 Options:
-  --add=NAME    	Creates a container
   -e environment    Specifies the Azure Storage Services account to use [default: default]
   -F configFile  	Specifies an alternative per-user configuration file [default: /etc/azb/config]
+  -f                Forces a destructive operation
   -h, --help     	Show this screen.
-  --list        	List all of the containers in the environment
-  --rm=NAME     	Destroys a container
   --version     	Show version.
 
 The most commonly used azb commands are:
