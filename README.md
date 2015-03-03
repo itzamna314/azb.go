@@ -8,10 +8,10 @@ A self-contained command-line tool that provides access to Azure Blob storage
 ```
 Usage:
   azb [ -F configFile ] [ -e environment ] [ --json ] ls [ <blobspec> ] 
-  azb [ -F configFile ] [ -e environment ] [ --json ] tree <container> 
-  azb [ -F configFile ] [ -e environment ] [ --json ] pull <blobpath> [ <dst> ]
-  azb [ -F configFile ] [ -e environment ] [ --json ] push [ -R ] <blobpath> [ <src> ]
-  azb [ -F configFile ] [ -e environment ] [ --json ] rm <blobpath>
+  azb [ -F configFile ] [ -e environment ] [ --json ] tree <container>
+  azb [ -F configFile ] [ -e environment ] [ --json ] get <blobpath> [ <dst> ]
+  azb [ -F configFile ] [ -e environment ] [ --json ] put <blobpath> [ <src> ]
+  azb [ -F configFile ] [ -e environment ] [ --json ] rm [ -f ] <blobpath>
   azb [ -F configFile ] [ -e environment ] [ --json ] cp <srcblobpath> <dstblobpath>
   azb [ -F configFile ] [ -e environment ] [ --json ] mv <srcblobpath> <dstblobpath>
   azb -h | --help
@@ -19,18 +19,24 @@ Usage:
 
 Arguments:
   container     	The name of the container to query
-  blobspec      	A reference to one or more blobs (e.g. "mycontainer/foo*", "mycontainer/")
+  blobspec      	A reference to one or more blobs (e.g. "mycontainer/foo", 
+"mycontainer/")
   blobpath			The path of a blob (e.g. "mycontainer/foo.txt")
 
 Options:
   -e environment    Specifies the Azure Storage Services account to use [default: default]
-  -F configFile  	Specifies an alternative per-user configuration file [default: /etc/azb/config]
+  -F configFile  	Specifies an alternative per-user configuration file [default: 
+/etc/azb/config]
+  -f                Forces a destructive operation
   -h, --help     	Show this screen.
   --version     	Show version.
 
-The most commonly used azb commands are:
+The most commonly used commands are:
    ls         	Lists containers and blobs
-   pull         Downloads blobs
+   get          Downloads a blob
+   put          Uploads a blob
+   tree         Prints the contents of a container as a tree
+   rm           Deletes a blob
 ```
 
 ## Configuration

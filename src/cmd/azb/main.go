@@ -185,11 +185,12 @@ Options:
   -h, --help     	Show this screen.
   --version     	Show version.
 
-The most commonly used azb commands are:
-   ls         	Lists blobs
-   container	List, create, and destroy containers
-
-See 'git help <command>' for more information on a specific command.
+The most commonly used commands are:
+   ls         	Lists containers and blobs
+   get          Downloads a blob
+   put          Uploads a blob
+   tree         Prints the contents of a container as a tree
+   rm           Deletes a blob
 `
 
 	dict, err := docopt.Parse(usage, argv, true, ProgramVersion, false)
