@@ -12,20 +12,16 @@ const (
 )
 
 func main() {
-	parseOpt()
-	return
-
-	// err = runCommand(cmd, cmdArgs)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
+	err := doit()
+	if err != nil {
+		panic(err)
+	}
 }
 
-func parseOpt() (err error) {
-	res, err := cmdAzb(os.Args[1:])
+func doit() (err error) {
+	res, err := usage(os.Args[1:])
 	if err != nil {
-		cmdAzb([]string{"azb", "--help"})
+		usage([]string{"azb", "--help"})
 		os.Exit(1)
 	}
 
@@ -35,16 +31,16 @@ func parseOpt() (err error) {
 
 	conf, err := azb.GetConfig(configFile, environment)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// detect mode
-	mode := "shell"
+	mode := "bare"
 	if res["--json"].(bool) {
 		mode = "json"
 	}
 
-	// detect ls
+	// dispatch ls
 	if res["ls"].(bool) {
 		cmd := &azb.SimpleCommand{
 			Config:     conf,
@@ -67,11 +63,11 @@ func parseOpt() (err error) {
 			fmt.Println("azb ls: unexpected arguments")
 			os.Exit(1)
 		} else if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
-	// detect tree
+	// dispatch tree
 	if res["tree"].(bool) {
 		cmd := &azb.SimpleCommand{
 			Config:     conf,
@@ -94,11 +90,11 @@ func parseOpt() (err error) {
 			fmt.Println("azb tree: unexpected arguments")
 			os.Exit(1)
 		} else if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
-	// detect get
+	// dispatch get
 	if res["get"].(bool) {
 		cmd := &azb.SimpleCommand{
 			Config:     conf,
@@ -124,11 +120,11 @@ func parseOpt() (err error) {
 			fmt.Println("azb pull: No such container or blob")
 			os.Exit(1)
 		} else if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
-	// detect rm
+	// dispatch rm
 	if res["rm"].(bool) {
 		cmd := &azb.SimpleCommand{
 			Config:     conf,
@@ -152,7 +148,7 @@ func parseOpt() (err error) {
 			fmt.Println("azb pull: No such container or blob")
 			os.Exit(1)
 		} else if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
@@ -174,7 +170,7 @@ func parseOpt() (err error) {
 	return nil
 }
 
-func cmdAzb(argv []string) (map[string]interface{}, error) {
+func usage(argv []string) (map[string]interface{}, error) {
 	usage := `azb - an uncomplicated azure blob storage client
 
 Usage:
