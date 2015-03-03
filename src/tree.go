@@ -150,29 +150,36 @@ const (
 )
 
 func printRoot(node *node) (nd, nf int) {
-	return printTree(node, []string{})
+	return printTree(node, &Stack{})
 }
 
-func pop(arr []string) (head []string, s string) {
+func pop(arr []string) ([]string, string) {
 	if len(arr) == 0 {
 		return []string{}, ""
 	} else if len(arr) == 1 {
 		return []string{}, arr[0]
 	} else {
-		return arr[:len(arr)-2], arr[len(arr)-1]
+		fmt.Printf("arr=[%s]\n", strings.Join(arr, ";"))
+
+		top := arr[len(arr)-1]
+
+		head := []string{}
+		for i := 0; i < len(arr)-2; i++ {
+			fmt.Printf("i=%d arr[i]=%s wtf=[%s]\n", i, arr[i], strings.Join(arr, ";"))
+			head = append(head, arr[i])
+		}
+
+		fmt.Printf("head=[%s], top=%s\n", strings.Join(head, ";"), top)
+
+		return head, top
 	}
 }
 
-func push(arr []string, s ...string) []string {
-	for _, u := range s {
-		arr = append(arr, u)
-	}
-	return arr
-}
+func printTree(node *node, stack *Stack) (nd, nf int) {
+	//	fmt.Printf("stack=[%s] len=%d\n", stack.String(), stack.Len())
 
-func printTree(node *node, stack []string) (nd, nf int) {
-	if len(stack) > 0 {
-		fmt.Printf("%s ", strings.Join(stack, " "))
+	if stack.Len() > 0 {
+		fmt.Printf("%s ", strings.Join(stack.Reverse(), " "))
 	}
 
 	fmt.Println(node.Name)
@@ -181,7 +188,8 @@ func printTree(node *node, stack []string) (nd, nf int) {
 		return 0, 1
 	}
 
-	base, top := pop(stack)
+	top, _ := stack.Pop()
+	base := stack.Len()
 
 	nd = 0
 	nf = 0
@@ -193,23 +201,23 @@ func printTree(node *node, stack []string) (nd, nf int) {
 		switch top {
 		case "":
 			if z0 < zz {
-				stack = push(base, BRANCH)
+				stack.Push(BRANCH)
 			} else {
-				stack = push(base, LEAF)
+				stack.Push(LEAF)
 			}
 			break
 		case BRANCH:
 			if z0 < zz {
-				stack = push(base, AIR, TRUNK, BRANCH)
+				stack.Push(TRUNK, BRANCH)
 			} else {
-				stack = push(base, AIR, TRUNK, LEAF)
+				stack.Push(TRUNK, LEAF)
 			}
 			break
 		case LEAF:
 			if z0 < zz {
-				stack = push(base, AIR, AIR, BRANCH)
+				stack.Push(AIR, BRANCH)
 			} else {
-				stack = push(base, AIR, AIR, LEAF)
+				stack.Push(AIR, LEAF)
 			}
 			break
 		default:
@@ -220,6 +228,10 @@ func printTree(node *node, stack []string) (nd, nf int) {
 		}
 
 		xd, xf := printTree(v, stack)
+
+		for stack.Len() > base {
+			stack.Pop()
+		}
 
 		nd = nd + xd
 		nf = nf + xf
