@@ -157,16 +157,6 @@ func doit() (err error) {
 		os.Exit(2)
 	}
 
-	if res["cp"].(bool) {
-		fmt.Println("azb cp: not implemented")
-		os.Exit(2)
-	}
-
-	if res["mv"].(bool) {
-		fmt.Println("azb mv: not implemented")
-		os.Exit(2)
-	}
-
 	return nil
 }
 
@@ -179,8 +169,6 @@ Usage:
   azb [ -F configFile ] [ -e environment ] [ --json ] get <blobpath> [ <dst> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] put <blobpath> [ <src> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] rm [ -f ] <blobpath>
-  azb [ -F configFile ] [ -e environment ] [ --json ] cp <srcblobpath> <dstblobpath>
-  azb [ -F configFile ] [ -e environment ] [ --json ] mv <srcblobpath> <dstblobpath>
   azb -h | --help
   azb --version
 
