@@ -203,7 +203,7 @@ Arguments:
 
 Options:
   -e environment    Specifies the Azure Storage Services account to use [default: default]
-  -F configFile  	Specifies an alternative per-user configuration file [default: /etc/azb/config]
+  -F configFile  	Specifies an alternative per-user configuration file [default: /usr/local/etc/azb/config]
   -f                Forces a destructive operation
   -h, --help     	Show this screen.
   --version     	Show version.
