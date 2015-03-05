@@ -32,7 +32,8 @@ install:
 
 archive: clean build
 	if [ -d $(tmp_dir) ]; then cd $(tmp_dir) && rm -rf *; fi;
-	mkdir -p $(proj_tmp_dir)
+	mkdir -p $(proj_tmp_dir)/bin
 	cp README.md $(proj_tmp_dir)
-	cp -R tmp $(proj_tmp_dir)
+	cp tmp/$(name) $(proj_tmp_dir)/bin
 	cd $(tmp_dir) && tar -cvzf ../$(project).tar.gz $(project)
+
