@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	ProgramVersion string = "azb version 0.1.0"
+	ProgramVersion string = "azb version 0.2.0"
 )
 
 func main() {
@@ -98,7 +98,7 @@ func doit() (err error) {
 	if res["get"].(bool) {
 		cmd := &azb.SimpleCommand{
 			Config:     conf,
-			Command:    "pull",
+			Command:    "get",
 			OutputMode: mode,
 		}
 
@@ -112,12 +112,12 @@ func doit() (err error) {
 		if dst, ok := res["<dst>"].(string); ok {
 			cmd.LocalPath = dst
 		} else {
-			cmd.LocalPath = fmt.Sprintf("%s/%s", src.Container, src.Path)
+			cmd.LocalPath = ""
 		}
 
 		err = cmd.Dispatch()
 		if err == azb.ErrContainerOrBlobNotFound {
-			fmt.Println("azb pull: No such container or blob")
+			fmt.Println("azb get: No such container or blob")
 			os.Exit(1)
 		} else if err != nil {
 			return err
@@ -145,7 +145,7 @@ func doit() (err error) {
 
 		err = cmd.Dispatch()
 		if err == azb.ErrContainerOrBlobNotFound {
-			fmt.Println("azb pull: No such container or blob")
+			fmt.Println("azb rm: No such container or blob")
 			os.Exit(1)
 		} else if err != nil {
 			return err

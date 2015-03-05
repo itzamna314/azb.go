@@ -31,28 +31,36 @@ func (cmd *SimpleCommand) pullBlob() error {
 		return err
 	}
 
-	// prepare the download location
-	dir := filepath.Dir(cmd.LocalPath)
-	err = os.MkdirAll(dir, 0755)
-	if err != nil {
-		return err
+	if cmd.LocalPath == "" {
+		// echo content to stdout
+		_, err := io.Copy(os.Stdout, body)
+		if err != nil {
+			return err
+		}
+	} else {
+		// prepare the download location
+		dir := filepath.Dir(cmd.LocalPath)
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+
+		// put the file on disk
+		f, err := os.Create(cmd.LocalPath)
+		if err != nil {
+			return err
+		}
+
+		defer f.Close()
+
+		written, err := io.Copy(f, body)
+		if err != nil {
+			return err
+		}
+
+		// tell the world about it
+		cmd.pullBlobReport(written)
 	}
-
-	// put the file on disk
-	f, err := os.Create(cmd.LocalPath)
-	if err != nil {
-		return err
-	}
-
-	defer f.Close()
-
-	written, err := io.Copy(f, body)
-	if err != nil {
-		return err
-	}
-
-	// tell the world about it
-	cmd.pullBlobReport(written)
 
 	return nil
 }

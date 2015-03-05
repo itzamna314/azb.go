@@ -30,7 +30,7 @@ func (cmd *SimpleCommand) Dispatch() error {
 		return cmd.ls()
 	case "tree":
 		return cmd.tree()
-	case "pull":
+	case "get":
 		return cmd.pull()
 	case "rm":
 		return cmd.rm()
@@ -74,7 +74,7 @@ func (cmd *SimpleCommand) tree() error {
 }
 
 func (cmd *SimpleCommand) pull() error {
-	if cmd.Source == nil || cmd.LocalPath == "" {
+	if cmd.Source == nil {
 		return ErrUnrecognizedCommand
 	}
 
