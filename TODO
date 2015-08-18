@@ -1,4 +1,3 @@
-- rm
 - cp
 - mv
 - push -R container dir
