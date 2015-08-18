@@ -17,15 +17,13 @@ Usage:
 
 Arguments:
   container     	The name of the container to query
-  blobspec      	A reference to one or more blobs (e.g. "mycontainer/foo", 
-"mycontainer/")
-  blobpath			The path of a blob (e.g. "mycontainer/foo.txt")
+  blobspec      	A reference to one or more blobs (e.g. "mycontainer/foo", "mycontainer/")
+  blobpath			  The path of a blob (e.g. "mycontainer/foo.txt")
 
 Options:
-  -e environment    Specifies the Azure Storage Services account to use [default: default]
-  -F configFile  	Specifies an alternative per-user configuration file [default: 
-/etc/azb/config]
-  -f                Forces a destructive operation
+  -e environment  Specifies the Azure Storage Services account to use [default: default]
+  -F configFile  	Specifies an alternative per-user configuration file [default: /etc/azb/config]
+  -f              Forces a destructive operation
   -h, --help     	Show this screen.
   --version     	Show version.
 
@@ -54,7 +52,7 @@ overridden with `-e` and `-F`, respectively.
 
 ## Building
 
-`azb` is built using Go 1.3.1 and Goop (`go get github.com/nitrous-io/goop`).
+`azb` is built using Go 1.4.2 and Dave Cheney's gb tool.
 
 ```Bash
 $ git clone https://github.com/politician/azb.go.git
