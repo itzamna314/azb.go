@@ -1,10 +1,10 @@
-package main
+package azb
 
 import (
-	"europium.io/x/azb"
 	"fmt"
-	"github.com/docopt/docopt-go"
 	"os"
+
+	"github.com/docopt/docopt-go"
 )
 
 const (
@@ -29,7 +29,7 @@ func doit() (err error) {
 	configFile := res["-F"].(string)
 	environment := res["-e"].(string)
 
-	conf, err := azb.GetConfig(configFile, environment)
+	conf, err := GetConfig(configFile, environment)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func doit() (err error) {
 
 	// dispatch ls
 	if res["ls"].(bool) {
-		cmd := &azb.SimpleCommand{
+		cmd := &SimpleCommand{
 			Config:     conf,
 			Command:    "ls",
 			OutputMode: mode,
@@ -56,10 +56,10 @@ func doit() (err error) {
 		cmd.Source = src
 
 		err = cmd.Dispatch()
-		if err == azb.ErrContainerNotFound {
+		if err == ErrContainerNotFound {
 			fmt.Println("azb ls: No such container")
 			os.Exit(1)
-		} else if err == azb.ErrUnrecognizedCommand {
+		} else if err == ErrUnrecognizedCommand {
 			fmt.Println("azb ls: unexpected arguments")
 			os.Exit(1)
 		} else if err != nil {
@@ -69,7 +69,7 @@ func doit() (err error) {
 
 	// dispatch tree
 	if res["tree"].(bool) {
-		cmd := &azb.SimpleCommand{
+		cmd := &SimpleCommand{
 			Config:     conf,
 			Command:    "tree",
 			OutputMode: mode,
@@ -83,10 +83,10 @@ func doit() (err error) {
 		cmd.Source = src
 
 		err = cmd.Dispatch()
-		if err == azb.ErrContainerNotFound {
+		if err == ErrContainerNotFound {
 			fmt.Println("azb tree: No such container")
 			os.Exit(1)
-		} else if err == azb.ErrUnrecognizedCommand {
+		} else if err == ErrUnrecognizedCommand {
 			fmt.Println("azb tree: unexpected arguments")
 			os.Exit(1)
 		} else if err != nil {
@@ -96,7 +96,7 @@ func doit() (err error) {
 
 	// dispatch get
 	if res["get"].(bool) {
-		cmd := &azb.SimpleCommand{
+		cmd := &SimpleCommand{
 			Config:     conf,
 			Command:    "get",
 			OutputMode: mode,
@@ -116,7 +116,7 @@ func doit() (err error) {
 		}
 
 		err = cmd.Dispatch()
-		if err == azb.ErrContainerOrBlobNotFound {
+		if err == ErrContainerOrBlobNotFound {
 			fmt.Println("azb get: No such container or blob")
 			os.Exit(1)
 		} else if err != nil {
@@ -126,7 +126,7 @@ func doit() (err error) {
 
 	// dispatch rm
 	if res["rm"].(bool) {
-		cmd := &azb.SimpleCommand{
+		cmd := &SimpleCommand{
 			Config:     conf,
 			Command:    "rm",
 			OutputMode: mode,
@@ -144,7 +144,7 @@ func doit() (err error) {
 		cmd.Source = src
 
 		err = cmd.Dispatch()
-		if err == azb.ErrContainerOrBlobNotFound {
+		if err == ErrContainerOrBlobNotFound {
 			fmt.Println("azb rm: No such container or blob")
 			os.Exit(1)
 		} else if err != nil {
@@ -153,7 +153,7 @@ func doit() (err error) {
 	}
 
 	if res["put"].(bool) {
-		cmd := &azb.SimpleCommand{
+		cmd := &SimpleCommand{
 			Config:     conf,
 			Command:    "put",
 			OutputMode: mode,
@@ -173,7 +173,7 @@ func doit() (err error) {
 		}
 
 		err = cmd.Dispatch()
-		if err == azb.ErrContainerOrBlobNotFound {
+		if err == ErrContainerOrBlobNotFound {
 			fmt.Println("azb put: No such container or blob")
 			os.Exit(1)
 		} else if err != nil {
@@ -188,7 +188,7 @@ func usage(argv []string) (map[string]interface{}, error) {
 	usage := `azb - an uncomplicated azure blob storage client
 
 Usage:
-  azb [ -F configFile ] [ -e environment ] [ --json ] ls [ <blobspec> ] 
+  azb [ -F configFile ] [ -e environment ] [ --json ] ls [ <blobspec> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] tree <container>
   azb [ -F configFile ] [ -e environment ] [ --json ] get <blobpath> [ <dst> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] put <blobpath> [ <src> ]
@@ -227,13 +227,13 @@ The most commonly used commands are:
 	return dict, err
 }
 
-func blobSpec(res map[string]interface{}, key string, pathPresent bool) (*azb.BlobSpec, error) {
+func blobSpec(res map[string]interface{}, key string, pathPresent bool) (*BlobSpec, error) {
 	s, ok := res[key].(string)
 	if !ok {
 		s = ""
 	}
 
-	src, err := azb.ParseBlobSpec(s)
+	src, err := ParseBlobSpec(s)
 	if err != nil {
 		return nil, err
 	} else if pathPresent && !src.PathPresent {

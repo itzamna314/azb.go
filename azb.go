@@ -2,10 +2,11 @@ package azb
 
 import (
 	"errors"
-	"github.com/MSOpenTech/azure-sdk-for-go/management"
-	"github.com/MSOpenTech/azure-sdk-for-go/management/storageservice"
-	"github.com/MSOpenTech/azure-sdk-for-go/storage"
 	"time"
+
+	"github.com/Azure/azure-sdk-for-go/management"
+	"github.com/Azure/azure-sdk-for-go/management/storageservice"
+	"github.com/Azure/azure-sdk-for-go/storage"
 )
 
 var (
@@ -89,19 +90,15 @@ func (cmd *SimpleCommand) put() error {
 	return cmd.putBlob()
 }
 
-func (cmd *SimpleCommand) getStorageService() (*storageservice.StorageService, error) {
+func (cmd *SimpleCommand) getStorageService() (*storageservice.StorageServiceClient, error) {
 	cli, err := management.NewClient(cmd.Config.Name, cmd.Config.ManagementCertificate)
 	if err != nil {
 		return nil, err
 	}
 
 	stor := storageservice.NewClient(cli)
-	ss, err := stor.GetStorageServiceByName(cmd.Config.Name)
-	if err != nil {
-		return nil, err
-	}
 
-	return ss, nil
+	return &stor, nil
 }
 
 func (cmd *SimpleCommand) getBlobStorageClient() (*storage.BlobStorageClient, error) {
@@ -111,7 +108,7 @@ func (cmd *SimpleCommand) getBlobStorageClient() (*storage.BlobStorageClient, er
 	}
 
 	c := stor.GetBlobService()
-	return c, nil
+	return &c, nil
 }
 
 func parseLastModified(s string) time.Time {

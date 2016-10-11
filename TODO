@@ -1,5 +1,0 @@
-- cp
-- mv
-- push -R container dir
-- push blobpath src
-
