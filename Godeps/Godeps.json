@@ -1,0 +1,46 @@
+{
+	"ImportPath": "github.com/itzamna314/azb.go",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v74",
+	"Packages": [
+		"./lib/"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/management",
+			"Comment": "v5.0.0-beta",
+			"Rev": "91f3d4a4d024e3c0d4d9412916d05cf84504a616"
+		},
+		{
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/management/storageservice",
+			"Comment": "v5.0.0-beta",
+			"Rev": "91f3d4a4d024e3c0d4d9412916d05cf84504a616"
+		},
+		{
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/storage",
+			"Comment": "v5.0.0-beta",
+			"Rev": "91f3d4a4d024e3c0d4d9412916d05cf84504a616"
+		},
+		{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Comment": "v0.2.0-21-g9906417",
+			"Rev": "99064174e013895bbd9b025c31100bd1d9b590ca"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/units",
+			"Rev": "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/pkcs12",
+			"Rev": "594708b89f21ece706681be23d04a6513a22de6e"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/pkcs12/internal/rc2",
+			"Rev": "594708b89f21ece706681be23d04a6513a22de6e"
+		},
+		{
+			"ImportPath": "gopkg.in/check.v1",
+			"Rev": "4f90aeace3a26ad7021961c297b22c42160c7b25"
+		}
+	]
+}
