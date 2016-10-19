@@ -6,8 +6,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-
-	"github.com/Azure/azure-sdk-for-go/storage"
 )
 
 type node struct {
@@ -44,26 +42,12 @@ func (cmd *SimpleCommand) treeBlobs() error {
 	}
 
 	// query the endpoint
-	res, err := client.ListBlobs(cmd.Source.Container, storage.ListBlobsParameters{Prefix: cmd.Source.Path})
+	res, err := cmd.listBlobsInternal(client)
 	if err != nil {
-		if sse, ok := err.(storage.AzureStorageServiceError); ok {
-			switch sse.Code {
-			case "ContainerNotFound":
-				return ErrContainerNotFound
-			}
-		}
 		return err
 	}
 
-	if res.Marker != "" || res.NextMarker != "" {
-		fmt.Printf("\n---\nmarker: %s\nnext marker: %s\n---\n\n", res.Marker, res.NextMarker)
-	}
-
-	// flatten results
-	arr := blobs{}
-	for _, u := range res.Blobs {
-		arr = append(arr, newBlob(u))
-	}
+	arr := blobs(res)
 
 	// sort results lexicographically
 	sort.Sort(arr)

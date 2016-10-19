@@ -3,6 +3,7 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/storage"
@@ -52,7 +53,8 @@ func (cmd *SimpleCommand) listContainers() error {
 
 func (cmd *SimpleCommand) listContainersInternal(client *storage.BlobStorageClient) ([]*container, error) {
 	// query the endpoint
-	res, err := client.ListContainers(storage.ListContainersParameters{Prefix: cmd.Source.Container})
+	params := storage.ListContainersParameters{}
+	res, err := client.ListContainers(params)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +62,23 @@ func (cmd *SimpleCommand) listContainersInternal(client *storage.BlobStorageClie
 	// flatten results
 	arr := []*container{}
 	for _, u := range res.Containers {
-		arr = append(arr, newContainer(u))
+		if strings.HasPrefix(u.Name, cmd.Source.Container) {
+			arr = append(arr, newContainer(u))
+		}
+	}
+
+	for res.NextMarker != "" {
+		params.Marker = res.NextMarker
+		res, err = client.ListContainers(params)
+		if err != nil {
+			return nil, handleListError(err)
+		}
+
+		for _, u := range res.Containers {
+			if strings.HasPrefix(u.Name, cmd.Source.Container) {
+				arr = append(arr, newContainer(u))
+			}
+		}
 	}
 
 	return arr, nil

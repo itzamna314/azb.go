@@ -49,7 +49,6 @@ func (cmd *SimpleCommand) sizeContainers(client *storage.BlobStorageClient) ([]*
 	}
 
 	numContainers := len(containers)
-	// TODO: Make this a cli param
 	containerChan := make(chan string, numContainers)
 	blobChan := make(chan []*blob, numContainers)
 
