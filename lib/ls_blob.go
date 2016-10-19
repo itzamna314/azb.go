@@ -60,10 +60,10 @@ func (cmd *SimpleCommand) listBlobsReport(arr []*blob) {
 		s, _ := json.Marshal(tmp)
 		fmt.Printf("%s\n", s)
 	} else {
-		fmt.Printf("total %d\n", len(arr))
 		for _, u := range arr {
 			fmt.Printf("%s\n", u.Name)
 		}
+		fmt.Printf("Found %d blobs\n", len(arr))
 	}
 }
 

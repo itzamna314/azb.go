@@ -19,12 +19,12 @@ Arguments:
   blobpath       The path of a blob (e.g. "mycontainer/foo.txt")
 
 Options:
-  -e environment 	Specifies the Azure Storage Services account to use [default: default]
-  -F configFile  	Specifies an alternative per-user configuration file [default: C:\_azb.toml]
-  -f             	Forces a destructive operation
+  -e environment  Specifies the Azure Storage Services account to use [default: default]
+  -F configFile   Specifies an alternative per-user configuration file [default: C:\_azb.toml]
+  -f              Forces a destructive operation
   -w workers      The maximum number of concurrent workers to use [default: 10]
-  -h, --help     	Show this screen.
-  --version      	Show version.
+  -h, --help      Show this screen.
+  --version       Show version.
 
 The most commonly used commands are:
   ls         	Lists containers and blobs

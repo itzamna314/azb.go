@@ -37,108 +37,9 @@ func doit() (err error) {
 		return err
 	}
 
-	// detect mode
-	mode := "bare"
-	if res["--json"].(bool) {
-		mode = "json"
-	}
-
-	w, err := strconv.Atoi(res["-w"].(string))
+	cmd, err := CreateSimpleCommand(conf, res)
 	if err != nil {
-		fmt.Printf("Usage: expected -w to be an int, was %s\n", res["-w"].(string))
-		os.Exit(1)
-	}
-
-	cmd := &lib.SimpleCommand{
-		Config:     conf,
-		OutputMode: mode,
-		Workers:    w,
-	}
-
-	// dispatch ls
-	if res["ls"].(bool) {
-		cmd.Command = "ls"
-
-		src, err := blobSpec(res, "<blobspec>", false)
-		if err != nil {
-			return err
-		}
-
-		cmd.Source = src
-	}
-
-	// dispatch tree
-	if res["tree"].(bool) {
-		cmd.Command = "tree"
-
-		src, err := blobSpec(res, "<container>", false)
-		if err != nil {
-			return err
-		}
-
-		cmd.Source = src
-	}
-
-	// dispatch get
-	if res["get"].(bool) {
-		cmd.Command = "get"
-
-		src, err := blobSpec(res, "<blobpath>", true)
-		if err != nil {
-			return err
-		}
-
-		cmd.Source = src
-
-		if dst, ok := res["<dst>"].(string); ok {
-			cmd.LocalPath = dst
-		} else {
-			cmd.LocalPath = ""
-		}
-	}
-
-	// dispatch rm
-	if res["rm"].(bool) {
-		cmd.Command = "rm"
-
-		if res["-f"].(bool) {
-			cmd.Destructive = true
-		}
-
-		src, err := blobSpec(res, "<blobpath>", true)
-		if err != nil {
-			return err
-		}
-
-		cmd.Source = src
-	}
-
-	if res["put"].(bool) {
-		cmd.Command = "put"
-
-		dst, err := blobSpec(res, "<blobpath>", false)
-		if err != nil {
-			return err
-		}
-
-		cmd.Destination = dst
-
-		if path, ok := res["<src>"].(string); ok {
-			cmd.LocalPath = path
-		} else {
-			cmd.LocalPath = fmt.Sprintf("%s/%s", dst.Container, dst.Path)
-		}
-	}
-
-	if res["size"].(bool) {
-		cmd.Command = "size"
-
-		src, err := blobSpec(res, "<blobspec>", false)
-		if err != nil {
-			return err
-		}
-
-		cmd.Source = src
+		return err
 	}
 
 	return handleErr(cmd.Dispatch())
@@ -166,25 +67,106 @@ func usage(argv []string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	//fmt.Println("cmdRoot says:")
-	//fmt.Printf("dict= %v\n", dict)
-
 	return dict, err
 }
 
-func blobSpec(res map[string]interface{}, key string, pathPresent bool) (*lib.BlobSpec, error) {
-	s, ok := res[key].(string)
-	if !ok {
-		s = ""
-	}
-
-	src, err := lib.ParseBlobSpec(s)
+func blobSpec(path string, requirePath bool) (*lib.BlobSpec, error) {
+	src, err := lib.ParseBlobSpec(path)
 	if err != nil {
 		return nil, err
-	} else if pathPresent && !src.PathPresent {
-		fmt.Println("azb: operation requires a fully-qualified path (e.g. foo/bar.txt)")
-		os.Exit(1)
+	} else if requirePath && !src.PathPresent {
+		return nil, fmt.Errorf("azb: operation requires a fully-qualified path (e.g. foo/bar.txt)")
 	}
 
 	return src, nil
+}
+
+func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.SimpleCommand, error) {
+	// detect mode
+	mode := "bare"
+	if res["--json"].(bool) {
+		mode = "json"
+	}
+
+	w, err := strconv.Atoi(res["-w"].(string))
+	if err != nil {
+		fmt.Printf("Usage: expected -w to be an int, was %s\n", res["-w"].(string))
+		os.Exit(1)
+	}
+
+	cmd := &lib.SimpleCommand{
+		Config:      cfg,
+		OutputMode:  mode,
+		Workers:     w,
+		Destructive: res["-f"].(bool),
+	}
+
+	var blobSrc, blobDst, localPath *string
+	requireBlobPath := false
+
+	// dispatch ls
+	switch {
+	case res["ls"].(bool):
+		cmd.Command = "ls"
+		blobSrc = stringOrDefault("<blobspec>", res)
+		break
+	case res["tree"].(bool):
+		cmd.Command = "tree"
+		blobSrc = stringOrDefault("<container>", res)
+		break
+	case res["get"].(bool):
+		cmd.Command = "get"
+		blobSrc = stringOrDefault("<blobpath>", res)
+		localPath = stringOrDefault("<dst>", res)
+		requireBlobPath = true
+		break
+	case res["rm"].(bool):
+		cmd.Command = "rm"
+		blobSrc = stringOrDefault("<blobpath>", res)
+		requireBlobPath = true
+		break
+	case res["put"].(bool):
+		cmd.Command = "put"
+		blobDst = stringOrDefault("<blobpath>", res)
+		localPath = stringOrDefault("<src>", res)
+		break
+	case res["size"].(bool):
+		cmd.Command = "size"
+		blobSrc = stringOrDefault("<blobspec>", res)
+		break
+	}
+
+	if blobSrc != nil {
+		src, err := blobSpec(*blobSrc, requireBlobPath)
+		if err != nil {
+			return nil, err
+		}
+
+		cmd.Source = src
+	}
+
+	if blobDst != nil {
+		dst, err := blobSpec(*blobDst, false)
+		if err != nil {
+			return nil, err
+		}
+
+		cmd.Destination = dst
+	}
+
+	if localPath != nil {
+		cmd.LocalPath = *localPath
+	}
+
+	return cmd, nil
+}
+
+func stringOrDefault(key string, dict map[string]interface{}) (s *string) {
+	s = new(string)
+	if str, ok := dict[key].(string); ok {
+		*s = str
+	} else {
+		*s = ""
+	}
+	return
 }
