@@ -9,12 +9,12 @@ Usage:
   azb [ -F configFile ] [ -e environment ] [ --json ] get <blobpath> [ <dst> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] put <blobpath> [ <src> ]
   azb [ -F configFile ] [ -e environment ] [ --json ] rm [ -f ] <blobpath>
-  azb [ -F configFile ] [ -e environment ] [ --json ] [ -w workers ] size [ <blobspec> ]
+  azb [ -F configFile ] [ -e environment ] [ --json ] [ -w workers ] size [ <blobspec> | - ]
   azb -h | --help
   azb --version
 
 Arguments:
-  container      The name of the container to query
+  container      The name of the container to query.
   blobspec       A reference to one or more blobs (e.g. "mycontainer/foo", "mycontainer/")
   blobpath       The path of a blob (e.g. "mycontainer/foo.txt")
 
@@ -25,12 +25,5 @@ Options:
   -w workers      The maximum number of concurrent workers to use [default: 10]
   -h, --help      Show this screen.
   --version       Show version.
-
-The most commonly used commands are:
-  ls         	Lists containers and blobs
-  get          Downloads a blob
-  put          Uploads a blob
-  tree         Prints the contents of a container as a tree
-  rm           Deletes a blob
 `
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -108,31 +109,31 @@ func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.S
 	switch {
 	case res["ls"].(bool):
 		cmd.Command = "ls"
-		blobSrc = stringOrDefault("<blobspec>", res)
+		blobSrc = stringOrDefault("<blobspec>", res, true)
 		break
 	case res["tree"].(bool):
 		cmd.Command = "tree"
-		blobSrc = stringOrDefault("<container>", res)
+		blobSrc = stringOrDefault("<container>", res, true)
 		break
 	case res["get"].(bool):
 		cmd.Command = "get"
-		blobSrc = stringOrDefault("<blobpath>", res)
-		localPath = stringOrDefault("<dst>", res)
+		blobSrc = stringOrDefault("<blobpath>", res, true)
+		localPath = stringOrDefault("<dst>", res, false)
 		requireBlobPath = true
 		break
 	case res["rm"].(bool):
 		cmd.Command = "rm"
-		blobSrc = stringOrDefault("<blobpath>", res)
+		blobSrc = stringOrDefault("<blobpath>", res, true)
 		requireBlobPath = true
 		break
 	case res["put"].(bool):
 		cmd.Command = "put"
-		blobDst = stringOrDefault("<blobpath>", res)
-		localPath = stringOrDefault("<src>", res)
+		blobDst = stringOrDefault("<blobpath>", res, true)
+		localPath = stringOrDefault("<src>", res, true)
 		break
 	case res["size"].(bool):
 		cmd.Command = "size"
-		blobSrc = stringOrDefault("<blobspec>", res)
+		blobSrc = stringOrDefault("<blobspec>", res, true)
 		break
 	}
 
@@ -161,12 +162,20 @@ func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.S
 	return cmd, nil
 }
 
-func stringOrDefault(key string, dict map[string]interface{}) (s *string) {
+func stringOrDefault(key string, dict map[string]interface{}, stdIn bool) (s *string) {
 	s = new(string)
 	if str, ok := dict[key].(string); ok {
-		*s = str
-	} else {
-		*s = ""
+		if stdIn && str == "-" {
+			rdr := bufio.NewReader(os.Stdin)
+			if in, err := rdr.ReadString('\n'); err == nil {
+				*s = in[:len(in)-1]
+			}
+		} else {
+			*s = str
+		}
+		return
 	}
+
+	*s = ""
 	return
 }
