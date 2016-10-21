@@ -13,13 +13,13 @@ import (
 func (cmd *SimpleCommand) pullBlob() error {
 
 	// get the client
-	client, err := cmd.getBlobStorageClient()
+	client, err := cmd.config.getBlobStorageClient()
 	if err != nil {
 		return err
 	}
 
 	// query the endpoint
-	body, err := client.GetBlob(cmd.Source.Container, cmd.Source.Path)
+	body, err := client.GetBlob(cmd.source.Container, cmd.source.Path)
 	if err != nil {
 		if sse, ok := err.(storage.AzureStorageServiceError); ok {
 			switch sse.Code {
@@ -32,7 +32,7 @@ func (cmd *SimpleCommand) pullBlob() error {
 		return err
 	}
 
-	if cmd.LocalPath == "" {
+	if cmd.localPath == "" {
 		// echo content to stdout
 		_, err := io.Copy(os.Stdout, body)
 		if err != nil {
@@ -40,14 +40,14 @@ func (cmd *SimpleCommand) pullBlob() error {
 		}
 	} else {
 		// prepare the download location
-		dir := filepath.Dir(cmd.LocalPath)
+		dir := filepath.Dir(cmd.localPath)
 		err = os.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
 
 		// put the file on disk
-		f, err := os.Create(cmd.LocalPath)
+		f, err := os.Create(cmd.localPath)
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func (cmd *SimpleCommand) pullBlob() error {
 }
 
 func (cmd *SimpleCommand) pullBlobReport(written int64) {
-	if cmd.OutputMode == "json" {
+	if cmd.outputMode == "json" {
 		tmp := struct {
 			StorageAccount string `json:"storageAccount"`
 			Container      string `json:"container"`
@@ -75,11 +75,11 @@ func (cmd *SimpleCommand) pullBlobReport(written int64) {
 			BytesWritten   int64  `json:"bytesWritten"`
 			Destination    string `json:"destination"`
 		}{
-			StorageAccount: cmd.Config.Name,
-			Container:      cmd.Source.Container,
-			Blob:           cmd.Source.Path,
+			StorageAccount: cmd.config.Name,
+			Container:      cmd.source.Container,
+			Blob:           cmd.source.Path,
 			BytesWritten:   written,
-			Destination:    cmd.LocalPath,
+			Destination:    cmd.localPath,
 		}
 
 		s, _ := json.Marshal(tmp)

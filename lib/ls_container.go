@@ -31,27 +31,27 @@ func newContainer(c storage.Container) *container {
 
 func (cmd *SimpleCommand) listContainers() error {
 	// get the client
-	client, err := cmd.getBlobStorageClient()
+	client, err := cmd.config.getBlobStorageClient()
 	if err != nil {
 		return err
 	}
 
-	arr, err := cmd.listContainersInternal(client)
+	arr, err := listContainersInternal(client, cmd.source.Container)
 	if err != nil {
 		return err
 	}
 
 	// list blobs if there was a direct match on the container
-	if len(arr) == 1 && cmd.Source.Container == arr[0].Name {
+	if len(arr) == 1 && cmd.source.Container == arr[0].Name {
 		return cmd.listBlobs()
 	}
 
-	cmd.listContainersReport(arr)
+	listContainersReport(arr, cmd)
 
 	return nil
 }
 
-func (cmd *SimpleCommand) listContainersInternal(client *storage.BlobStorageClient) ([]*container, error) {
+func listContainersInternal(client *storage.BlobStorageClient, namePrefix string) ([]*container, error) {
 	// query the endpoint
 	params := storage.ListContainersParameters{}
 	res, err := client.ListContainers(params)
@@ -62,7 +62,7 @@ func (cmd *SimpleCommand) listContainersInternal(client *storage.BlobStorageClie
 	// flatten results
 	arr := []*container{}
 	for _, u := range res.Containers {
-		if strings.HasPrefix(u.Name, cmd.Source.Container) {
+		if strings.HasPrefix(u.Name, namePrefix) {
 			arr = append(arr, newContainer(u))
 		}
 	}
@@ -75,7 +75,7 @@ func (cmd *SimpleCommand) listContainersInternal(client *storage.BlobStorageClie
 		}
 
 		for _, u := range res.Containers {
-			if strings.HasPrefix(u.Name, cmd.Source.Container) {
+			if strings.HasPrefix(u.Name, namePrefix) {
 				arr = append(arr, newContainer(u))
 			}
 		}
@@ -84,13 +84,13 @@ func (cmd *SimpleCommand) listContainersInternal(client *storage.BlobStorageClie
 	return arr, nil
 }
 
-func (cmd *SimpleCommand) listContainersReport(arr []*container) {
-	if cmd.OutputMode == "json" {
+func listContainersReport(arr []*container, cmd Command) {
+	if cmd.OutputMode() == "json" {
 		tmp := struct {
 			StorageAccount string       `json:"storageAccount"`
 			Containers     []*container `json:"containers"`
 		}{
-			StorageAccount: cmd.Config.Name,
+			StorageAccount: cmd.Config().Name,
 			Containers:     arr,
 		}
 

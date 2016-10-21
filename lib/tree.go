@@ -36,7 +36,7 @@ func (d blobs) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
 
 func (cmd *SimpleCommand) treeBlobs() error {
 	// get the client
-	client, err := cmd.getBlobStorageClient()
+	client, err := cmd.config.getBlobStorageClient()
 	if err != nil {
 		return err
 	}
@@ -228,14 +228,14 @@ func printTree(node *node, stack *Stack) (nd, nf int) {
 }
 
 func (cmd *SimpleCommand) treeBlobsReport(root *node) {
-	if cmd.OutputMode == "json" {
+	if cmd.outputMode == "json" {
 		tmp := struct {
 			StorageAccount string `json:"storageAccount"`
 			Container      string `json:"container"`
 			Root           *node  `json:"tree"`
 		}{
-			StorageAccount: cmd.Config.Name,
-			Container:      cmd.Source.Container,
+			StorageAccount: cmd.config.Name,
+			Container:      cmd.source.Container,
 			Root:           root,
 		}
 

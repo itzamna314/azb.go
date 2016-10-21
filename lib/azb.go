@@ -15,16 +15,40 @@ var (
 	ErrContainerOrBlobNotFound = errors.New("container or blob not found")
 )
 
-type SimpleCommand struct {
-	Config      *AzbConfig
-	Command     string
-	Source      *BlobSpec
-	Destination *BlobSpec
-	LocalPath   string
-	OutputMode  string
-	Destructive bool
-	Workers     int
+type Command interface {
+	Dispatch() error
+	SetConfig(cfg *AzbConfig)
+	Config() *AzbConfig
+	AddSource(blob *BlobSpec)
+	SetDst(blob *BlobSpec)
+	SetLocalPath(path string)
+	SetOutputMode(mode string)
+	OutputMode() string
+	SetDestructive(isDestructive bool)
+	SetWorkers(n int)
 }
+
+type SimpleCommand struct {
+	config      *AzbConfig
+	Command     string
+	source      *BlobSpec
+	destination *BlobSpec
+	localPath   string
+	outputMode  string
+	destructive bool
+	workers     int
+}
+
+// Command interface
+func (cmd *SimpleCommand) SetConfig(cfg *AzbConfig)  { cmd.config = cfg }
+func (cmd *SimpleCommand) Config() *AzbConfig        { return cmd.config }
+func (cmd *SimpleCommand) AddSource(blob *BlobSpec)  { cmd.source = blob }
+func (cmd *SimpleCommand) SetDst(blob *BlobSpec)     { cmd.destination = blob }
+func (cmd *SimpleCommand) SetLocalPath(path string)  { cmd.localPath = path }
+func (cmd *SimpleCommand) SetOutputMode(mode string) { cmd.outputMode = mode }
+func (cmd *SimpleCommand) OutputMode() string        { return cmd.outputMode }
+func (cmd *SimpleCommand) SetDestructive(b bool)     { cmd.destructive = b }
+func (cmd *SimpleCommand) SetWorkers(n int)          { cmd.workers = n }
 
 func (cmd *SimpleCommand) Dispatch() error {
 	switch cmd.Command {
@@ -38,19 +62,17 @@ func (cmd *SimpleCommand) Dispatch() error {
 		return cmd.rm()
 	case "put":
 		return cmd.put()
-	case "size":
-		return cmd.size()
 	default:
 		return ErrUnrecognizedCommand
 	}
 }
 
 func (cmd *SimpleCommand) ls() error {
-	if cmd.Source == nil || cmd.Destination != nil {
+	if cmd.source == nil || cmd.destination != nil {
 		return ErrUnrecognizedCommand
 	}
 
-	if cmd.Source.PathPresent {
+	if cmd.source.PathPresent {
 		return cmd.listBlobs()
 	} else {
 		return cmd.listContainers()
@@ -58,7 +80,7 @@ func (cmd *SimpleCommand) ls() error {
 }
 
 func (cmd *SimpleCommand) rm() error {
-	if cmd.Source == nil || cmd.Destination != nil {
+	if cmd.source == nil || cmd.destination != nil {
 		return ErrUnrecognizedCommand
 	}
 
@@ -66,11 +88,11 @@ func (cmd *SimpleCommand) rm() error {
 }
 
 func (cmd *SimpleCommand) tree() error {
-	if cmd.Source == nil || cmd.Destination != nil {
+	if cmd.source == nil || cmd.destination != nil {
 		return ErrUnrecognizedCommand
 	}
 
-	if cmd.Source.PathPresent {
+	if cmd.source.PathPresent {
 		return ErrUnrecognizedCommand
 	}
 
@@ -78,7 +100,7 @@ func (cmd *SimpleCommand) tree() error {
 }
 
 func (cmd *SimpleCommand) pull() error {
-	if cmd.Source == nil {
+	if cmd.source == nil {
 		return ErrUnrecognizedCommand
 	}
 
@@ -86,15 +108,15 @@ func (cmd *SimpleCommand) pull() error {
 }
 
 func (cmd *SimpleCommand) put() error {
-	if cmd.Destination == nil || cmd.LocalPath == "" {
+	if cmd.destination == nil || cmd.localPath == "" {
 		return ErrUnrecognizedCommand
 	}
 
 	return cmd.putBlob()
 }
 
-func (cmd *SimpleCommand) getStorageService() (*storageservice.StorageServiceClient, error) {
-	cli, err := management.NewClient(cmd.Config.Name, cmd.Config.ManagementCertificate)
+func (cfg *AzbConfig) getStorageService() (*storageservice.StorageServiceClient, error) {
+	cli, err := management.NewClient(cfg.Name, cfg.ManagementCertificate)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +126,8 @@ func (cmd *SimpleCommand) getStorageService() (*storageservice.StorageServiceCli
 	return &stor, nil
 }
 
-func (cmd *SimpleCommand) getBlobStorageClient() (*storage.BlobStorageClient, error) {
-	stor, err := storage.NewBasicClient(cmd.Config.Name, cmd.Config.AccessKey)
+func (cfg *AzbConfig) getBlobStorageClient() (*storage.BlobStorageClient, error) {
+	stor, err := storage.NewBasicClient(cfg.Name, cfg.AccessKey)
 	if err != nil {
 		return nil, err
 	}

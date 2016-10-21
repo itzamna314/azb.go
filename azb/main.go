@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/docopt/docopt-go"
 	"github.com/itzamna314/azb.go/lib"
@@ -38,7 +39,7 @@ func doit() (err error) {
 		return err
 	}
 
-	cmd, err := CreateSimpleCommand(conf, res)
+	cmd, err := CreateCommand(conf, res)
 	if err != nil {
 		return err
 	}
@@ -82,7 +83,7 @@ func blobSpec(path string, requirePath bool) (*lib.BlobSpec, error) {
 	return src, nil
 }
 
-func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.SimpleCommand, error) {
+func CreateCommand(cfg *lib.AzbConfig, res map[string]interface{}) (lib.Command, error) {
 	// detect mode
 	mode := "bare"
 	if res["--json"].(bool) {
@@ -95,12 +96,7 @@ func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.S
 		os.Exit(1)
 	}
 
-	cmd := &lib.SimpleCommand{
-		Config:      cfg,
-		OutputMode:  mode,
-		Workers:     w,
-		Destructive: res["-f"].(bool),
-	}
+	var cmd lib.Command
 
 	var blobSrc, blobDst, localPath *string
 	requireBlobPath := false
@@ -108,34 +104,47 @@ func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.S
 	// dispatch ls
 	switch {
 	case res["ls"].(bool):
-		cmd.Command = "ls"
+		cmd = &lib.SimpleCommand{Command: "ls"}
 		blobSrc = stringOrDefault("<blobspec>", res, true)
 		break
 	case res["tree"].(bool):
-		cmd.Command = "tree"
+		cmd = &lib.SimpleCommand{Command: "tree"}
 		blobSrc = stringOrDefault("<container>", res, true)
 		break
 	case res["get"].(bool):
-		cmd.Command = "get"
+		cmd = &lib.SimpleCommand{Command: "get"}
 		blobSrc = stringOrDefault("<blobpath>", res, true)
 		localPath = stringOrDefault("<dst>", res, false)
 		requireBlobPath = true
 		break
 	case res["rm"].(bool):
-		cmd.Command = "rm"
+		cmd = &lib.SimpleCommand{Command: "rm"}
 		blobSrc = stringOrDefault("<blobpath>", res, true)
 		requireBlobPath = true
 		break
 	case res["put"].(bool):
-		cmd.Command = "put"
+		cmd = &lib.SimpleCommand{Command: "put"}
 		blobDst = stringOrDefault("<blobpath>", res, true)
 		localPath = stringOrDefault("<src>", res, true)
 		break
 	case res["size"].(bool):
-		cmd.Command = "size"
-		blobSrc = stringOrDefault("<blobspec>", res, true)
+		cmd = &lib.SizeCommand{}
+		// Special handling - size accepts a slice of blobspec
+		blobSrcs := stringsOrDefault("<blobspecs>", res, true)
+		for _, src := range blobSrcs {
+			bs, err := blobSpec(src, requireBlobPath)
+			if err != nil {
+				return nil, err
+			}
+			cmd.AddSource(bs)
+		}
 		break
 	}
+
+	cmd.SetConfig(cfg)
+	cmd.SetOutputMode(mode)
+	cmd.SetWorkers(w)
+	cmd.SetDestructive(res["-f"].(bool))
 
 	if blobSrc != nil {
 		src, err := blobSpec(*blobSrc, requireBlobPath)
@@ -143,7 +152,7 @@ func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.S
 			return nil, err
 		}
 
-		cmd.Source = src
+		cmd.AddSource(src)
 	}
 
 	if blobDst != nil {
@@ -152,11 +161,11 @@ func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.S
 			return nil, err
 		}
 
-		cmd.Destination = dst
+		cmd.SetDst(dst)
 	}
 
 	if localPath != nil {
-		cmd.LocalPath = *localPath
+		cmd.SetLocalPath(*localPath)
 	}
 
 	return cmd, nil
@@ -164,18 +173,51 @@ func CreateSimpleCommand(cfg *lib.AzbConfig, res map[string]interface{}) (*lib.S
 
 func stringOrDefault(key string, dict map[string]interface{}, stdIn bool) (s *string) {
 	s = new(string)
+
+	if stdIn && dict["-"].(bool) {
+		*s = readStdIn()
+		return
+	}
+
 	if str, ok := dict[key].(string); ok {
 		if stdIn && str == "-" {
-			rdr := bufio.NewReader(os.Stdin)
-			if in, err := rdr.ReadString('\n'); err == nil {
-				*s = in[:len(in)-1]
-			}
+			*s = readStdIn()
 		} else {
 			*s = str
 		}
+
 		return
 	}
 
 	*s = ""
 	return
+}
+
+func stringsOrDefault(key string, dict map[string]interface{}, stdIn bool) (s []string) {
+	if stdIn && dict["-"].(bool) {
+		rawStr := readStdIn()
+		return strings.Split(rawStr, " ")
+	}
+
+	if strs, ok := dict[key].([]string); ok {
+		if stdIn {
+			if len(strs) == 1 && strs[0] == "-" {
+				rawStr := readStdIn()
+				return strings.Split(rawStr, " ")
+			}
+		}
+
+		return strs
+	}
+
+	return []string{}
+}
+
+func readStdIn() string {
+	rdr := bufio.NewReader(os.Stdin)
+	if in, err := rdr.ReadString('\n'); err == nil {
+		return in[:len(in)-1]
+	}
+
+	return ""
 }

@@ -30,7 +30,7 @@ func newBlob(c storage.Blob) *blob {
 
 func (cmd *SimpleCommand) listBlobs() error {
 	// get the client
-	client, err := cmd.getBlobStorageClient()
+	client, err := cmd.config.getBlobStorageClient()
 	if err != nil {
 		return err
 	}
@@ -46,14 +46,14 @@ func (cmd *SimpleCommand) listBlobs() error {
 }
 
 func (cmd *SimpleCommand) listBlobsReport(arr []*blob) {
-	if cmd.OutputMode == "json" {
+	if cmd.outputMode == "json" {
 		tmp := struct {
 			StorageAccount string  `json:"storageAccount"`
 			Container      string  `json:"container"`
 			Blobs          []*blob `json:"blobs"`
 		}{
-			StorageAccount: cmd.Config.Name,
-			Container:      cmd.Source.Container,
+			StorageAccount: cmd.config.Name,
+			Container:      cmd.source.Container,
 			Blobs:          arr,
 		}
 
@@ -69,8 +69,8 @@ func (cmd *SimpleCommand) listBlobsReport(arr []*blob) {
 
 func (cmd *SimpleCommand) listBlobsInternal(client *storage.BlobStorageClient) ([]*blob, error) {
 	// query the endpoint
-	params := storage.ListBlobsParameters{Prefix: cmd.Source.Path}
-	res, err := client.ListBlobs(cmd.Source.Container, params)
+	params := storage.ListBlobsParameters{Prefix: cmd.source.Path}
+	res, err := client.ListBlobs(cmd.source.Container, params)
 	if err != nil {
 		return nil, handleListError(err)
 	}
@@ -82,7 +82,7 @@ func (cmd *SimpleCommand) listBlobsInternal(client *storage.BlobStorageClient) (
 
 	for res.NextMarker != "" {
 		params.Marker = res.NextMarker
-		res, err = client.ListBlobs(cmd.Source.Container, params)
+		res, err = client.ListBlobs(cmd.source.Container, params)
 		if err != nil {
 			return nil, handleListError(err)
 		}

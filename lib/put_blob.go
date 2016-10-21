@@ -14,18 +14,18 @@ const maxBlockSize = 4 * units.KB
 
 func (cmd *SimpleCommand) putBlob() error {
 
-	container := cmd.Destination.Container
-	remotePath := cmd.Destination.Path
+	container := cmd.destination.Container
+	remotePath := cmd.destination.Path
 
-	if !cmd.Destination.PathPresent {
-		_, remotePath = filepath.Split(cmd.LocalPath)
+	if !cmd.destination.PathPresent {
+		_, remotePath = filepath.Split(cmd.localPath)
 	}
 
 	// fmt.Printf("Would upload %s to %s/%s", cmd.LocalPath, container, remotePath)
 	// os.Exit(2)
 
 	// open the local file to be uploaded
-	f, err := os.Open(cmd.LocalPath)
+	f, err := os.Open(cmd.localPath)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (cmd *SimpleCommand) putBlob() error {
 	defer f.Close()
 
 	// get the client
-	client, err := cmd.getBlobStorageClient()
+	client, err := cmd.config.getBlobStorageClient()
 	if err != nil {
 		return err
 	}

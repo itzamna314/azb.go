@@ -5,19 +5,19 @@ import "fmt"
 func (cmd *SimpleCommand) rmBlob() error {
 
 	// get the client
-	client, err := cmd.getBlobStorageClient()
+	client, err := cmd.config.getBlobStorageClient()
 	if err != nil {
 		return err
 	}
 
-	if cmd.Destructive == false {
-		fmt.Printf("Would remove %s\n", cmd.Source.Path)
+	if cmd.destructive == false {
+		fmt.Printf("Would remove %s\n", cmd.source.Path)
 		return nil
 	}
 
 	// query the endpoint
 	extraHeaders := map[string]string{}
-	_, err = client.DeleteBlobIfExists(cmd.Source.Container, cmd.Source.Path, extraHeaders)
+	_, err = client.DeleteBlobIfExists(cmd.source.Container, cmd.source.Path, extraHeaders)
 	if err != nil {
 		return err
 	}
