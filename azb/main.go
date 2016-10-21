@@ -196,18 +196,21 @@ func stringOrDefault(key string, dict map[string]interface{}, stdIn bool) (s *st
 func stringsOrDefault(key string, dict map[string]interface{}, stdIn bool) (s []string) {
 	if stdIn && dict["-"].(bool) {
 		rawStr := readStdIn()
-		return strings.Split(rawStr, " ")
+		s = trimSplit(rawStr)
+		return
 	}
 
 	if strs, ok := dict[key].([]string); ok {
 		if stdIn {
 			if len(strs) == 1 && strs[0] == "-" {
 				rawStr := readStdIn()
-				return strings.Split(rawStr, " ")
+				s = trimSplit(rawStr)
+				return
 			}
 		}
 
-		return strs
+		s = strs
+		return
 	}
 
 	return []string{}
@@ -220,4 +223,14 @@ func readStdIn() string {
 	}
 
 	return ""
+}
+
+func trimSplit(rawStr string) (s []string) {
+	splits := strings.Split(rawStr, " ")
+	for _, spl := range splits {
+		if strings.Trim(spl, " \t\n\r") != "" {
+			s = append(s, spl)
+		}
+	}
+	return
 }
