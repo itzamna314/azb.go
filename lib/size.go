@@ -14,6 +14,7 @@ type SizeCommand struct {
 	outputMode    string
 	workers       int
 	workerTimeout time.Duration
+	logger        Logger
 }
 
 // Command interface
@@ -26,6 +27,7 @@ func (cmd *SizeCommand) SetOutputMode(mode string) { cmd.outputMode = mode }
 func (cmd *SizeCommand) OutputMode() string        { return cmd.outputMode }
 func (cmd *SizeCommand) SetDestructive(b bool)     {}
 func (cmd *SizeCommand) SetWorkers(n int)          { cmd.workers = n }
+func (cmd *SizeCommand) SetLogger(l Logger)        { cmd.logger = l }
 
 func (cmd *SizeCommand) Dispatch() error {
 	// default for now
@@ -50,11 +52,11 @@ func (cmd *SizeCommand) Dispatch() error {
 
 	// First, send all input sources to our workers
 	for _, src := range cmd.sources {
-		fmt.Printf("Sending source '%s'\n", src)
+		cmd.logger.Debug("Sending source '%s'\n", src)
 		sourcesChan <- src
 	}
 
-	fmt.Printf("-------\nDone sending sources\n------\n\n")
+	cmd.logger.Debug("-------\nDone sending sources\n------\n\n")
 
 	// Count up how many sources do not have a path. We need to expand all
 	// such sources.  When we have done so, we can close the sources channel.
@@ -74,15 +76,15 @@ waitLoop:
 		case <-expandedChan:
 			numToExpand--
 			if numToExpand <= 0 {
-				fmt.Printf("------\nDone expanding sources\n------\n\n")
+				cmd.logger.Debug("------\nDone expanding sources\n------\n\n")
 				close(sourcesChan)
 			}
 		case id := <-exitChan:
 			numWorkers--
-			fmt.Printf("Worker %s exiting. %d still working\n", id, numWorkers)
+			cmd.logger.Debug("Worker %s exiting. %d still working\n", id, numWorkers)
 			// Once all workers have exited, close off blob chan
 			if numWorkers <= 0 {
-				fmt.Printf("------\nDone counting blobs\n------\n\n")
+				cmd.logger.Debug("------\nDone counting blobs\n------\n\n")
 				close(blobChan)
 			}
 		case blobs, ok := <-blobChan:
@@ -101,7 +103,7 @@ waitLoop:
 	for k, v := range unitMap {
 		szUnit := float64(size) / float64(v)
 		if szUnit < 1000 && szUnit > 1 {
-			fmt.Printf("Total size: %.2f %s\n", szUnit, k)
+			cmd.logger.Info("Total size: %.2f %s\n", szUnit, k)
 			break
 		}
 	}
@@ -138,9 +140,6 @@ func (cmd SizeCommand) sizeWorker(id string, sources chan *BlobSpec,
 		var curBlobs []*blob
 		res := storage.BlobListResponse{}
 		for firstTime := true; firstTime || res.NextMarker != ""; firstTime = false {
-			if !firstTime {
-
-			}
 
 			var err error
 			for i := 0; i < 3; i++ {
@@ -162,7 +161,7 @@ func (cmd SizeCommand) sizeWorker(id string, sources chan *BlobSpec,
 			params.Marker = res.NextMarker
 		}
 
-		fmt.Printf("Worker %s finished enumerating container %s\n", id, src.Container)
+		cmd.logger.Debug("Worker %s finished enumerating container %s\n", id, src.Container)
 		blobs <- curBlobs
 	}
 

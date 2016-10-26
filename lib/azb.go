@@ -26,6 +26,7 @@ type Command interface {
 	OutputMode() string
 	SetDestructive(isDestructive bool)
 	SetWorkers(n int)
+	SetLogger(l Logger)
 }
 
 type SimpleCommand struct {
@@ -37,6 +38,7 @@ type SimpleCommand struct {
 	outputMode  string
 	destructive bool
 	workers     int
+	logger      Logger
 }
 
 // Command interface
@@ -49,6 +51,7 @@ func (cmd *SimpleCommand) SetOutputMode(mode string) { cmd.outputMode = mode }
 func (cmd *SimpleCommand) OutputMode() string        { return cmd.outputMode }
 func (cmd *SimpleCommand) SetDestructive(b bool)     { cmd.destructive = b }
 func (cmd *SimpleCommand) SetWorkers(n int)          { cmd.workers = n }
+func (cmd *SimpleCommand) SetLogger(l Logger)        { cmd.logger = l }
 
 func (cmd *SimpleCommand) Dispatch() error {
 	switch cmd.Command {

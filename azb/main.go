@@ -96,6 +96,8 @@ func CreateCommand(cfg *lib.AzbConfig, res map[string]interface{}) (lib.Command,
 		os.Exit(1)
 	}
 
+	logger := lib.CreateLogger(res["-v"].(bool), res["-s"].(bool))
+
 	var cmd lib.Command
 
 	var blobSrc, blobDst, localPath *string
@@ -145,6 +147,7 @@ func CreateCommand(cfg *lib.AzbConfig, res map[string]interface{}) (lib.Command,
 	cmd.SetOutputMode(mode)
 	cmd.SetWorkers(w)
 	cmd.SetDestructive(res["-f"].(bool))
+	cmd.SetLogger(logger)
 
 	if blobSrc != nil {
 		src, err := blobSpec(*blobSrc, requireBlobPath)
