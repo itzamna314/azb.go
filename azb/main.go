@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ProgramVersion string = "azb version 1.1.0"
+	ProgramVersion string = "azb version 1.2.0"
 )
 
 func main() {
@@ -207,6 +207,10 @@ func stringsOrDefault(key string, dict map[string]interface{}, stdIn bool) (s []
 				s = trimSplit(rawStr)
 				return
 			}
+		}
+
+		if len(strs) == 0 {
+			strs = append(strs, "")
 		}
 
 		s = strs

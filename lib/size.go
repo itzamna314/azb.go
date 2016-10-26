@@ -2,16 +2,18 @@ package lib
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/alecthomas/units"
 )
 
 type SizeCommand struct {
-	config     *AzbConfig
-	sources    []*BlobSpec
-	outputMode string
-	workers    int
+	config        *AzbConfig
+	sources       []*BlobSpec
+	outputMode    string
+	workers       int
+	workerTimeout time.Duration
 }
 
 // Command interface
@@ -26,33 +28,72 @@ func (cmd *SizeCommand) SetDestructive(b bool)     {}
 func (cmd *SizeCommand) SetWorkers(n int)          { cmd.workers = n }
 
 func (cmd *SizeCommand) Dispatch() error {
-	// get the client
-	client, err := cmd.config.getBlobStorageClient()
-	if err != nil {
-		return err
+	// default for now
+	cmd.workerTimeout = 100 * time.Millisecond
+
+	sourcesChan := make(chan *BlobSpec)
+	blobChan := make(chan []*blob)
+	// Keep track of sources that need to be expanded.
+	// Once we've expanded all necessary sources, we can close sourcesChan.
+	expandedChan := make(chan string)
+	// Keep track of workers.  When all workers have exited, we can add up
+	// the total blob size.
+	exitChan := make(chan string)
+
+	// Add an additional worker for expanding each source, to guarantee we have
+	// enough workers
+	numWorkers := cmd.workers + len(cmd.sources)
+	for i := 0; i < numWorkers; i++ {
+		id := fmt.Sprintf("%d", i)
+		go (*cmd).sizeWorker(id, sourcesChan, blobChan, expandedChan, exitChan)
 	}
 
-	var blobs []*blob
-	var size int64 = 0
+	// First, send all input sources to our workers
 	for _, src := range cmd.sources {
-		simple := SimpleCommand{
-			config:     cmd.config,
-			source:     src,
-			outputMode: cmd.outputMode,
-			workers:    cmd.workers,
-		}
+		fmt.Printf("Sending source '%s'\n", src)
+		sourcesChan <- src
+	}
 
+	fmt.Printf("-------\nDone sending sources\n------\n\n")
+
+	// Count up how many sources do not have a path. We need to expand all
+	// such sources.  When we have done so, we can close the sources channel.
+	numToExpand := 0
+	for _, src := range cmd.sources {
 		if !src.PathPresent {
-			blobs, err = simple.sizeContainers(client)
-			if err != nil {
-				return err
-			}
-		} else {
-			blobs, err = simple.sizeBlobs(client)
+			numToExpand++
 		}
+	}
 
-		for _, b := range blobs {
-			size += b.ContentLength
+	// Count up the size as we go
+	var size int64 = 0
+	// Wait for our workers to list out blobs.
+waitLoop:
+	for {
+		select {
+		case <-expandedChan:
+			numToExpand--
+			if numToExpand <= 0 {
+				fmt.Printf("------\nDone expanding sources\n------\n\n")
+				close(sourcesChan)
+			}
+		case id := <-exitChan:
+			numWorkers--
+			fmt.Printf("Worker %s exiting. %d still working\n", id, numWorkers)
+			// Once all workers have exited, close off blob chan
+			if numWorkers <= 0 {
+				fmt.Printf("------\nDone walking blobs\n------\n\n")
+				close(blobChan)
+			}
+		case blobs, ok := <-blobChan:
+			// Once blob chan is closed and empty, stop receiving
+			if !ok {
+				break waitLoop
+			}
+
+			for _, b := range blobs {
+				size += b.ContentLength
+			}
 		}
 	}
 
@@ -68,79 +109,73 @@ func (cmd *SizeCommand) Dispatch() error {
 	return nil
 }
 
-func (cmd *SimpleCommand) sizeContainers(client *storage.BlobStorageClient) ([]*blob, error) {
-	var blobs []*blob
-	var containers []*container
+func (cmd SizeCommand) sizeWorker(id string, sources chan *BlobSpec,
+	blobs chan<- []*blob, expanded chan<- string, exited chan<- string) {
 
-	fmt.Printf("Sizing container %s\n", cmd.source.Container)
-
-	containers, err := listContainersInternal(client, cmd.source.Container)
-	if err != nil {
-		return nil, err
-	}
-
-	numContainers := len(containers)
-	containerChan := make(chan string, numContainers)
-	blobChan := make(chan []*blob, numContainers)
-
-	for i := 0; i < cmd.workers; i++ {
-		go (*cmd).containerWorker(fmt.Sprintf("%s-%d", cmd.source, i), containerChan, blobChan)
-	}
-
-	for _, c := range containers {
-		containerChan <- c.Name
-	}
-	close(containerChan)
-
-	for i := 0; i < numContainers; i++ {
-		curBlobs := <-blobChan
-		for _, b := range curBlobs {
-			blobs = append(blobs, b)
-		}
-	}
-
-	fmt.Printf("Finished Sizing container %s\n\n", cmd.source.Container)
-
-	return blobs, nil
-}
-
-func (cmd SimpleCommand) containerWorker(id string, containers <-chan string, blobs chan<- []*blob) {
 	client, err := cmd.config.getBlobStorageClient()
 	if err != nil {
-		panic("Failed to get blob storage client in worker.  Everything is fucked")
+		panic("Failed to get blob storage client in worker.  Add retry logic")
 	}
 
-	for c := range containers {
-		params := storage.ListBlobsParameters{Prefix: cmd.source.Path, MaxResults: 5000}
-		fmt.Printf("Worker %s enumerating container %s\n", id, c)
+	for src := range sources {
+		if !src.PathPresent {
+			fmt.Printf("Started expanding source %s\n", src)
+			// We need to break this source down into all containers it could refer to
+			// List all containers for this source, and enqueue them back onto sources
+			// Then get out
+			sendContainersToChannel(client, sources, src)
+			expanded <- id
+			fmt.Printf("Finished expanding source %s\n", src)
+			continue
+		}
+
+		// We have a path present, so we can list all matching blobs and count their
+		// size.
+		params := storage.ListBlobsParameters{Prefix: src.Path, MaxResults: 5000}
+		fmt.Printf("Worker %s started enumerating container %s\n", id, src.Container)
 
 		var curBlobs []*blob
-		res, err := client.ListBlobs(c, params)
-		if err != nil {
-			panic("Failed to list blobs in worker.  Everything is fucked")
-		}
-
-		// flatten results
-		for _, u := range res.Blobs {
-			curBlobs = append(curBlobs, newBlob(u))
-		}
-
-		for res.NextMarker != "" {
-			params.Marker = res.NextMarker
-			res, err = client.ListBlobs(c, params)
+		res := storage.BlobListResponse{}
+		for firstTime := true; firstTime || res.NextMarker != ""; firstTime = false {
+			res, err := client.ListBlobs(src.Container, params)
 			if err != nil {
-				panic("Failed to list blobs with marker in worker.  Everything is fucked")
+				panic("Failed to list blobs in worker.  Add retry logic")
 			}
 
+			// flatten results
 			for _, u := range res.Blobs {
 				curBlobs = append(curBlobs, newBlob(u))
 			}
+
+			params.Marker = res.NextMarker
 		}
 
+		fmt.Printf("Worker %s finished enumerating container %s\n", id, src.Container)
 		blobs <- curBlobs
 	}
 
-	fmt.Printf("Worker %s exiting\n", id)
+	exited <- id
+}
+
+func sendContainersToChannel(client *storage.BlobStorageClient,
+	outChan chan<- *BlobSpec, src *BlobSpec) error {
+
+	containers, err := listContainersInternal(client, src.Container)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range containers {
+		bs := BlobSpec{
+			Container:   c.Name,
+			Path:        "",
+			PathPresent: true,
+		}
+		fmt.Printf("Sent container %+v to sources channel\n", bs)
+		outChan <- &bs
+	}
+
+	return nil
 }
 
 func (cmd *SimpleCommand) sizeBlobs(client *storage.BlobStorageClient) ([]*blob, error) {
