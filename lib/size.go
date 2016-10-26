@@ -82,7 +82,7 @@ waitLoop:
 			fmt.Printf("Worker %s exiting. %d still working\n", id, numWorkers)
 			// Once all workers have exited, close off blob chan
 			if numWorkers <= 0 {
-				fmt.Printf("------\nDone walking blobs\n------\n\n")
+				fmt.Printf("------\nDone counting blobs\n------\n\n")
 				close(blobChan)
 			}
 		case blobs, ok := <-blobChan:
@@ -114,32 +114,44 @@ func (cmd SizeCommand) sizeWorker(id string, sources chan *BlobSpec,
 
 	client, err := cmd.config.getBlobStorageClient()
 	if err != nil {
-		panic("Failed to get blob storage client in worker.  Add retry logic")
+		panic("Failed to get blob storage client in worker.")
 	}
 
 	for src := range sources {
 		if !src.PathPresent {
-			fmt.Printf("Started expanding source %s\n", src)
 			// We need to break this source down into all containers it could refer to
 			// List all containers for this source, and enqueue them back onto sources
 			// Then get out
-			sendContainersToChannel(client, sources, src)
+			err := sendContainersToChannel(client, sources, src)
+			if err != nil {
+				panic("Failed to list containers for source without blob path")
+			}
+
 			expanded <- id
-			fmt.Printf("Finished expanding source %s\n", src)
 			continue
 		}
 
 		// We have a path present, so we can list all matching blobs and count their
 		// size.
 		params := storage.ListBlobsParameters{Prefix: src.Path, MaxResults: 5000}
-		fmt.Printf("Worker %s started enumerating container %s\n", id, src.Container)
 
 		var curBlobs []*blob
 		res := storage.BlobListResponse{}
 		for firstTime := true; firstTime || res.NextMarker != ""; firstTime = false {
-			res, err := client.ListBlobs(src.Container, params)
+			if !firstTime {
+
+			}
+
+			var err error
+			for i := 0; i < 3; i++ {
+				res, err = client.ListBlobs(src.Container, params)
+				if err == nil {
+					break
+				}
+			}
+
 			if err != nil {
-				panic("Failed to list blobs in worker.  Add retry logic")
+				panic("Failed to list blobs in worker after 3 retries.  Aborting")
 			}
 
 			// flatten results
@@ -160,7 +172,15 @@ func (cmd SizeCommand) sizeWorker(id string, sources chan *BlobSpec,
 func sendContainersToChannel(client *storage.BlobStorageClient,
 	outChan chan<- *BlobSpec, src *BlobSpec) error {
 
-	containers, err := listContainersInternal(client, src.Container)
+	var err error
+	var containers []*container
+	for i := 0; i < 3; i++ {
+		containers, err = listContainersInternal(client, src.Container)
+		if err == nil {
+			break
+		}
+	}
+
 	if err != nil {
 		return err
 	}
@@ -171,18 +191,8 @@ func sendContainersToChannel(client *storage.BlobStorageClient,
 			Path:        "",
 			PathPresent: true,
 		}
-		fmt.Printf("Sent container %+v to sources channel\n", bs)
 		outChan <- &bs
 	}
 
 	return nil
-}
-
-func (cmd *SimpleCommand) sizeBlobs(client *storage.BlobStorageClient) ([]*blob, error) {
-	res, err := cmd.listBlobsInternal(client)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
 }

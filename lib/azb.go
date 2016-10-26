@@ -127,13 +127,18 @@ func (cfg *AzbConfig) getStorageService() (*storageservice.StorageServiceClient,
 }
 
 func (cfg *AzbConfig) getBlobStorageClient() (*storage.BlobStorageClient, error) {
-	stor, err := storage.NewBasicClient(cfg.Name, cfg.AccessKey)
-	if err != nil {
-		return nil, err
+	var res error
+	for i := 0; i < 3; i++ {
+		stor, err := storage.NewBasicClient(cfg.Name, cfg.AccessKey)
+		if err != nil {
+			res = err
+			continue
+		}
+		c := stor.GetBlobService()
+		return &c, nil
 	}
 
-	c := stor.GetBlobService()
-	return &c, nil
+	return nil, res
 }
 
 func parseLastModified(s string) time.Time {
