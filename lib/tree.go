@@ -2,7 +2,6 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"sort"
 	"strings"
@@ -134,40 +133,18 @@ const (
 	STAR   string = "─x─"
 )
 
-func printRoot(node *node) (nd, nf int) {
-	return printTree(node, &Stack{})
+func (cmd *SimpleCommand) printRoot(node *node) (nd, nf int) {
+	return cmd.printTree(node, &Stack{})
 }
 
-func pop(arr []string) ([]string, string) {
-	if len(arr) == 0 {
-		return []string{}, ""
-	} else if len(arr) == 1 {
-		return []string{}, arr[0]
-	} else {
-		fmt.Printf("arr=[%s]\n", strings.Join(arr, ";"))
-
-		top := arr[len(arr)-1]
-
-		head := []string{}
-		for i := 0; i < len(arr)-2; i++ {
-			fmt.Printf("i=%d arr[i]=%s wtf=[%s]\n", i, arr[i], strings.Join(arr, ";"))
-			head = append(head, arr[i])
-		}
-
-		fmt.Printf("head=[%s], top=%s\n", strings.Join(head, ";"), top)
-
-		return head, top
-	}
-}
-
-func printTree(node *node, stack *Stack) (nd, nf int) {
+func (cmd *SimpleCommand) printTree(node *node, stack *Stack) (nd, nf int) {
 	//	fmt.Printf("stack=[%s] len=%d\n", stack.String(), stack.Len())
 
 	if stack.Len() > 0 {
-		fmt.Printf("%s ", strings.Join(stack.Reverse(), " "))
+		cmd.logger.Info("%s ", strings.Join(stack.Reverse(), " "))
 	}
 
-	fmt.Println(node.Name)
+	cmd.logger.Info("%s\n", node.Name)
 
 	if node.Nodes == nil {
 		return 0, 1
@@ -206,13 +183,13 @@ func printTree(node *node, stack *Stack) (nd, nf int) {
 			}
 			break
 		default:
-			fmt.Println("\n---")
-			fmt.Println("invalid stack: ")
-			fmt.Printf("stack=%v, top=%s\n", base, top)
+			cmd.logger.Info("\n---")
+			cmd.logger.Info("invalid stack: ")
+			cmd.logger.Info("stack=%v, top=%s\n", base, top)
 			os.Exit(9)
 		}
 
-		xd, xf := printTree(v, stack)
+		xd, xf := cmd.printTree(v, stack)
 
 		for stack.Len() > base {
 			stack.Pop()
@@ -240,10 +217,10 @@ func (cmd *SimpleCommand) treeBlobsReport(root *node) {
 		}
 
 		s, _ := json.Marshal(tmp)
-		fmt.Printf("%s\n", s)
+		cmd.logger.Info("%s\n", s)
 	} else {
-		nd, nf := printRoot(root)
+		nd, nf := cmd.printRoot(root)
 
-		fmt.Printf("\n%d directories, %d files\n", nd, nf)
+		cmd.logger.Debug("\n%d directories, %d files\n", nd, nf)
 	}
 }

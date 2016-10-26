@@ -21,7 +21,7 @@ func (cmd *SimpleCommand) putBlob() error {
 		_, remotePath = filepath.Split(cmd.localPath)
 	}
 
-	// fmt.Printf("Would upload %s to %s/%s", cmd.LocalPath, container, remotePath)
+	cmd.logger.Debug("Uploading %s to %s/%s", cmd.localPath, container, remotePath)
 	// os.Exit(2)
 
 	// open the local file to be uploaded

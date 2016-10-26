@@ -2,7 +2,6 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -83,6 +82,6 @@ func (cmd *SimpleCommand) pullBlobReport(written int64) {
 		}
 
 		s, _ := json.Marshal(tmp)
-		fmt.Printf("%s\n", s)
+		cmd.logger.Info("%s\n", s)
 	}
 }

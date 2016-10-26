@@ -1,7 +1,5 @@
 package lib
 
-import "fmt"
-
 func (cmd *SimpleCommand) rmBlob() error {
 
 	// get the client
@@ -11,7 +9,7 @@ func (cmd *SimpleCommand) rmBlob() error {
 	}
 
 	if cmd.destructive == false {
-		fmt.Printf("Would remove %s\n", cmd.source.Path)
+		cmd.logger.Info("Would remove %s\n", cmd.source.Path)
 		return nil
 	}
 

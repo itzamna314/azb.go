@@ -28,6 +28,7 @@ func (cmd *SizeCommand) OutputMode() string        { return cmd.outputMode }
 func (cmd *SizeCommand) SetDestructive(b bool)     {}
 func (cmd *SizeCommand) SetWorkers(n int)          { cmd.workers = n }
 func (cmd *SizeCommand) SetLogger(l Logger)        { cmd.logger = l }
+func (cmd *SizeCommand) Logger() Logger            { return cmd.logger }
 
 func (cmd *SizeCommand) Dispatch() error {
 	// default for now

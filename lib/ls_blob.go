@@ -2,7 +2,6 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/storage"
@@ -58,12 +57,12 @@ func (cmd *SimpleCommand) listBlobsReport(arr []*blob) {
 		}
 
 		s, _ := json.Marshal(tmp)
-		fmt.Printf("%s\n", s)
+		cmd.logger.Info("%s\n", s)
 	} else {
 		for _, u := range arr {
-			fmt.Printf("%s\n", u.Name)
+			cmd.logger.Info("%s\n", u.Name)
 		}
-		fmt.Printf("Found %d blobs\n", len(arr))
+		cmd.logger.Debug("Found %d blobs\n", len(arr))
 	}
 }
 
