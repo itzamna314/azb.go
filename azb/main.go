@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ProgramVersion string = "azb version 1.2.0"
+	ProgramVersion string = "azb version 1.2.1"
 )
 
 func main() {

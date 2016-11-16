@@ -52,11 +52,9 @@ func (cmd *SimpleCommand) listContainers() error {
 
 func listContainersInternal(client *storage.BlobStorageClient, namePrefix string) ([]*container, error) {
 	// query the endpoint
-	// BUG: if there are more than 5000 containers to list, the param filter will only
-	// examine the first 5000.  So, if your prefix would match the 5001st container,
-	// you would find no containers.  To get around that, we list all of the containers and
-	// do the match manually :(
-	params := storage.ListContainersParameters{}
+	params := storage.ListContainersParameters{
+		Prefix: namePrefix,
+	}
 	res, err := client.ListContainers(params)
 	if err != nil {
 		return nil, err
